@@ -41,7 +41,7 @@ with st.sidebar:
     # EDITABLE: Ganti emoji logo dan text title
     st.markdown("""
     <div style='text-align: center; margin-bottom: 1rem;'>
-        <h1 style='margin: 0; font-size: 2rem;'>🌍</h1>
+        <h1 style='margin: 0; font-size: 2rem;'></h1>
         <h2 style='margin: 0.5rem 0 0 0; font-size: 1.3rem;'>Sistem PGA</h2>
     </div>
     """, unsafe_allow_html=True)
