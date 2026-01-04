@@ -683,23 +683,26 @@ def show():
             st.subheader("🎯 Validasi Akurasi pada Data Anda")
             st.write("Statistik ini mengukur seberapa presisi Neural Network dalam mereplikasi model GMPE pada dataset ini:")
 
-            from sklearn.metrics import mean_squared_error, r2_score
+            from sklearn.metrics import mean_squared_error, mean_absolute_error
             
             y_true = df_filtered['PGA_GMPE']
             y_pred = df_filtered['PGA_MLP']
             
+            # Menghitung Metrik Absolut
             user_rmse = np.sqrt(mean_squared_error(y_true, y_pred))
-            user_r2 = r2_score(y_true, y_pred)
+            user_mae = mean_absolute_error(y_true, y_pred)
+            avg_corr = (y_pred - y_true).abs().mean()
 
             u_col1, u_col2, u_col3 = st.columns(3)
             with u_col1:
-                st.metric("RMSE (Data Anda)", f"{user_rmse:.5f}")
+                st.metric("MAE (Rata-rata Error)", f"{user_mae:.5f} g")
+                st.caption("Semakin kecil MAE, semakin dekat MLP dengan GMPE.")
             with u_col2:
-                st.metric("R² Score (Data Anda)", f"{user_r2:.5f}")
+                st.metric("RMSE (Deviasi Error)", f"{user_rmse:.5f} g")
+                st.caption("Mengukur penyebaran error prediksi.")
             with u_col3:
-                # Menghitung rata-rata koreksi yang diberikan variabel tambahan
-                avg_corr = (y_pred - y_true).abs().mean()
                 st.metric("Avg. Correction", f"{avg_corr:.5f} g")
+                st.caption("Rata-rata penyesuaian oleh variabel tambahan.")
 
             st.info("ℹ️ **Keterangan:** Nilai RMSE dan R² di atas menunjukkan tingkat keselarasan model MLP terhadap standar GMPE. "
                     "Adanya selisih (Correction) menunjukkan peran variabel tambahan (NST, GAP, dll) dalam menyesuaikan nilai estimasi.")
@@ -765,12 +768,12 @@ def show():
             y_true = df_result['PGA_GMPE']
             y_pred = df_result['PGA_MLP']
             u_rmse = np.sqrt(mean_squared_error(y_true, y_pred))
-            u_r2 = r2_score(y_true, y_pred)
+            u_mae = mean_absolute_error(y_true, y_pred)
 
             col_acc1, col_acc2 = st.columns(2)
             with col_acc1:
                 fig_r2 = go.Figure(go.Indicator(
-                    mode = "gauge+number", value = u_r2,
+                    mode = "gauge+number", value = u_mae,
                     title = {'text': "R² Score (Kemiripan)"},
                     gauge = {'axis': {'range': [0, 1]}, 'bar': {'color': "darkblue"}}))
                 st.plotly_chart(fig_r2, use_container_width=True)
