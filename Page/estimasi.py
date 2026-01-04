@@ -763,7 +763,7 @@ def show():
                                         title="Intensitas PGA (MLP) di Wilayah Target")
             st.plotly_chart(fig_map_mlp, use_container_width=True)
 
-            # Visualisasi RMSE & R^2
+            # Visualisasi RMSE & MAE
             st.markdown("#### Metrik Akurasi Model terhadap GMPE")
             y_true = df_result['PGA_GMPE']
             y_pred = df_result['PGA_MLP']
@@ -774,13 +774,13 @@ def show():
             with col_acc1:
                 fig_r2 = go.Figure(go.Indicator(
                     mode = "gauge+number", value = u_mae,
-                    title = {'text': "R² Score (Kemiripan)"},
+                    title = {'text': "MAE (Mean Absolute Error)"},
                     gauge = {'axis': {'range': [0, 1]}, 'bar': {'color': "darkblue"}}))
                 st.plotly_chart(fig_r2, use_container_width=True)
             with col_acc2:
                 fig_rmse = go.Figure(go.Indicator(
                     mode = "gauge+number", value = u_rmse,
-                    title = {'text': "RMSE (Error)"},
+                    title = {'text': "RMSE (Root Mean Square Error)"},
                     gauge = {'axis': {'range': [0, 0.2]}, 'bar': {'color': "darkred"}}))
                 st.plotly_chart(fig_rmse, use_container_width=True)
 
