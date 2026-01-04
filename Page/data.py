@@ -1,57 +1,24 @@
-# ============================================
-# IMPORT LIBRARIES
-# ============================================
 import streamlit as st
 import pandas as pd
 import numpy as np
 
-# ============================================
-# FUNCTION HALAMAN DATA
-# ============================================
-def show():
-    """
-    Halaman Data - Upload & Validasi Dataset
-    
-    Fitur:
-    1. Penjelasan dataset yang baik
-    2. Upload file (CSV/Excel)
-    3. Validasi missing values
-    4. Preview data
-    """
-    
-    # ============================================
+
+def show():   
     # HEADER HALAMAN
-    # EDITABLE: Judul halaman
-    # ============================================
     st.markdown("""
     <div style='text-align: center; margin-bottom: 2rem;'>
-        <h1 style='color: #1f2937; font-size: 2.5rem; margin-bottom: 0.5rem;'>
-            Upload Data Gempa
+        <h1 style = font-size: 2.5rem; margin-bottom: 0.5rem;'>
+            Data Gempa
         </h1>
-        <p style='color: #6b7280; font-size: 1.1rem;'>
-            Unggah dataset gempa Anda untuk estimasi PGA
-        </p>
     </div>
     """, unsafe_allow_html=True)
-    # EDITABLE: Ganti judul dan subtitle
     
-    # ============================================
-    # SECTION 1: PENJELASAN DATASET YANG BAIK
-    # EDITABLE: Kriteria dataset, contoh, tips
-    # ============================================
     
+    # PENJELASAN DATASET
+
     st.markdown("### Kriteria Dataset untuk Estimasi PGA")
-    # EDITABLE: Title section
     
-    st.markdown("""
-    Untuk mendapatkan **estimasi PGA yang tinggi dan akurat**, dataset gempa Anda harus memenuhi kriteria berikut:
-    """)
-    # EDITABLE: Penjelasan intro
-    
-    # === Info Box: Kriteria Dataset ===
     st.info("""
-    **Indikator Wajib Dalam Dataset**
-    
     1. **Perhitungan Menggunakan GMPE:**
        - `Magnitudo`: Magnitudo gempa dalam skala Moment Magnitude (M_w)   
     2. **Perhitungan Menggunakan GMPE dan Machine Learning:**
@@ -59,94 +26,28 @@ def show():
        - `NST`: Jumlah total stasiun seismik yang digunakan untuk menentukan parameter lokasi gempa (pusat gempa).
        - `Gap`: Celah sudut terbesar antar stasiun perekam relatif terhadap pusat gempa
        - `RMS`: Nilai sisa (residual) rata-rata dari waktu tempuh gelombang.
-       - `magNST`: Jumlah stasiun yang secara spesifik berkontribusi dalam menentukan nilai Magnitudo gempa.
+       - `MagNST`: Jumlah stasiun yang secara spesifik berkontribusi dalam menentukan nilai Magnitudo gempa.
        - `Depth`: Kedalaman sumber gempa (hiposenter) di bawah permukaan bumi (dalam km).
-       - `DepthError`: PNilai ketidakpastian atau kesalahan estimasi pada parameter kedalaman (dalam km).
+       - `DepthError`: Nilai ketidakpastian atau kesalahan estimasi pada parameter kedalaman (dalam km).
                 
     """)
-    # EDITABLE: Ganti kriteria sesuai kebutuhan sistem Anda
-    # EDITABLE: Ubah range nilai (magnitude, depth, dll)
-    
-    # # === Expander: Contoh Format Dataset ===
-    # with st.expander("📄 Lihat Contoh Format Dataset"):
-    #     # EDITABLE: Contoh data dummy
-    #     st.markdown("**Contoh format CSV yang benar:**")
-        
-    #     # Buat sample data
-    #     sample_data = pd.DataFrame({
-    #         'magnitude': [5.2, 6.1, 5.8, 4.9, 6.5],
-    #         'depth': [10.5, 35.2, 15.0, 8.3, 45.6],
-    #         'latitude': [5.55, 5.48, 5.62, 5.41, 5.53],
-    #         'longitude': [95.32, 95.28, 95.35, 95.25, 95.30]
-    #     })
-    #     # EDITABLE: Ganti dengan sample data yang sesuai
-    #     # EDITABLE: Tambah kolom lain jika diperlukan (contoh: time, place, dll)
-        
-    #     st.dataframe(sample_data, use_container_width=True)
-        
-    #     st.markdown("""
-    #     **Penjelasan kolom:**
-    #     - `magnitude`: Kekuatan gempa (skala Richter/Moment)
-    #     - `depth`: Kedalaman fokus gempa dari permukaan (km)
-    #     - `latitude`: Koordinat lintang lokasi gempa
-    #     - `longitude`: Koordinat bujur lokasi gempa
-    #     """)
-    #     # EDITABLE: Tambah penjelasan kolom tambahan jika ada
-    
-    # # === Expander: Tips Dataset Berkualitas ===
-    # with st.expander("💡 Tips Mendapatkan Dataset Berkualitas"):
-    #     st.markdown("""
-    #     **Sumber Data Terpercaya:**
-        
-    #     1. **USGS Earthquake Catalog**
-    #        - Website: https://earthquake.usgs.gov/earthquakes/search/
-    #        - Data global, real-time, akurat
-    #        - Format: CSV download langsung
-        
-    #     2. **BMKG Indonesia**
-    #        - Website: https://www.bmkg.go.id/
-    #        - Data gempa wilayah Indonesia
-    #        - Fokus untuk gempa lokal Aceh
-        
-    #     3. **ISC Bulletin**
-    #        - Website: http://www.isc.ac.uk/
-    #        - Data gempa global yang sudah diverifikasi
-        
-    #     **Preprocessing Data:**
-    #     - Hapus duplikat data
-    #     - Filter magnitude ≥ 4.0 (untuk konsistensi)
-    #     - Filter region yang relevan (contoh: Aceh dan sekitarnya)
-    #     - Konversi satuan jika perlu (contoh: depth dalam km)
-    #     """)
-    #     # EDITABLE: Tambah/hapus sumber data sesuai kebutuhan
-    #     # EDITABLE: Ubah tips preprocessing
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # ============================================
-    # SECTION 2: FILE UPLOADER
-    # EDITABLE: Tipe file, max size
-    # ============================================
-    
+    # Upload Data
     st.markdown("### Upload Dataset Gempa")
-    # EDITABLE: Title section
-    
+        
     st.markdown("""
     Silakan upload file dataset gempa Anda dalam format **CSV** atau **Excel**.
     """)
-    # EDITABLE: Instruksi upload
-    
-    # === File Uploader ===
+
     uploaded_file = st.file_uploader(
-        "Pilih file dataset",                          # EDITABLE: Label uploader
-        type=['csv', 'xlsx', 'xls'],                   # EDITABLE: Tipe file yang diterima
-        help="Upload file CSV atau Excel yang berisi data gempa"  # EDITABLE: Help text
+        "Pilih file dataset",                          
+        type=['csv', 'xlsx', 'xls'],                   
+        help="Unggah file CSV atau Excel yang berisi data gempa"  
     )
-    # EDITABLE: Tambah type lain jika perlu (contoh: 'txt', 'json')
     
-    # ============================================
-    # SECTION 3: VALIDASI & PREVIEW DATA
-    # ============================================
+    # Valdasi dan Preview Data
 
     if uploaded_file is not None:
         try:
@@ -158,7 +59,6 @@ def show():
             st.success(f"File **{uploaded_file.name}** berhasil diupload!")
             st.markdown("---")
             
-            # 1. LOGIKA ALIASING KOLOM (Mendeteksi variasi nama kolom)
             # Mendefinisikan variasi nama yang mungkin diinput user
             column_aliases = {
                 'magnitude': ['magnitude', 'mag', 'm', 'mw', 'mag_mw'],
@@ -173,7 +73,7 @@ def show():
                 'deptherror': ['deptherror', 'depth_error', 'err_depth']
             }
 
-            # Fungsi untuk memetakan kolom user ke standar sistem
+            # Pengecekan kolom
             actual_columns = {col.lower(): col for col in df.columns}
             mapped_columns = {}
             for key, aliases in column_aliases.items():
@@ -182,73 +82,113 @@ def show():
                         mapped_columns[key] = actual_columns[alias]
                         break
 
-            # 2. ANALISIS KESIAPAN METODE
-            st.markdown("### 🔍 Analisis Kesiapan Metode")
-            
-            # Syarat minimal GMPE: Magnitude (Vs30 bisa opsional dengan nilai standar)
-            has_mag = 'magnitude' in mapped_columns
-            is_gmpe_ready = has_mag # Minimal ada Magnitudo dan Jarak (Jarak dihitung dari Lat/Lon nanti)
+            # Pemilihan Metode
+            st.markdown("### Validasi Kualitas Data")
 
-            # Syarat Hybrid: Semua kolom teknis tersedia
+
+            # Cek Data Hilang
+            if df.isnull().values.any():
+                st.error("### 🛑 Ditemukan Data Hilang (Missing Values)")
+                nan_details = df.isnull().sum()
+                nan_cols = nan_details[nan_details > 0]
+
+                # Baris yang mengandung NA
+                rows_with_nan = df[df.isnull().any(axis=1)].index.tolist()
+                rows_display = [r + 1 for r in rows_with_nan]
+                
+                col_err1, col_err2 = st.columns([1, 2])
+                
+                with col_err1:
+                    st.write("**Ringkasan Kolom Kosong:**")
+                    st.dataframe(nan_cols.rename("Jumlah Kosong"), use_container_width=True)
+                
+                with col_err2:
+                    st.write("**Lokasi Baris:**")
+                    baris_teks = ", ".join(map(str, rows_display[:20]))
+                    if len(rows_display) > 20:
+                        baris_teks += " ... dan seterusnya."
+                    
+                    st.warning(f"Data kosong ditemukan pada baris: \n\n `{baris_teks}`")
+                
+                st.info("💡 **Saran:** Silakan lengkapi data yang kosong pada dataset Anda atau hapus baris tersebut sebelum upload ulang.")
+                st.stop()
+            
+            # Cek Tipe Data 
+            cols_to_check = [v for k, v in mapped_columns.items()]
+            error_log = []
+            for col in cols_to_check:
+                converted = pd.to_numeric(df[col], errors='coerce')
+                if converted.isnull().any():
+                    invalid_rows = df[converted.isnull()].index.tolist()
+                    invalid_values = df.loc[converted.isnull(), col].tolist()
+                    error_log.append({
+                        "Kolom": col, 
+                        "Baris": [r + 1 for r in invalid_rows[:5]], 
+                        "Nilai Salah": invalid_values[:5]
+                    })
+
+            if error_log:
+                st.error("### ❌ Kesalahan Tipe Data (Bukan Angka)")
+                st.dataframe(pd.DataFrame(error_log), use_container_width=True, hide_index=True)
+                st.info("💡 **Saran:** Pastikan semua kolom parameter berisi angka numerik.")
+                st.stop()
+
+
+            st.success("✅ Data Valid")
+
+
+            for col in cols_to_check:
+                df[col] = pd.to_numeric(df[col])
+
+
+            # Analisis Kesiapan Metode
+            st.markdown("---")
+            st.markdown("### Pengecekan Metode")
+
+            essential_cols = ['magnitude', 'latitude', 'longitude']
+            missing_essential = [k for k in essential_cols if k not in mapped_columns]
+            is_gmpe_ready = len(missing_essential) == 0
+
             missing_hybrid = [k for k in column_aliases.keys() if k not in mapped_columns]
             is_hybrid_ready = is_gmpe_ready and (len(missing_hybrid) == 0)
 
             col_st1, col_st2 = st.columns(2)
             with col_st1:
                 if is_gmpe_ready:
-                    st.success("✅ **Metode GMPE**")
+                    st.success("**Metode GMPE Dapat Digunakan**")
                 else:
-                    st.error("❌ **Metode GMPE: TIDAK SIAP**")
-                    st.caption("Pastikan ada kolom 'Magnitude'")
+                    st.error("**Metode GMPE Tidak Dapat Digunakan**")
+                    st.caption(f"Butuh kolom: {', '.join(missing_essential)}")
 
             with col_st2:
                 if is_hybrid_ready:
-                    st.success("✅ **Metode Hybrid (ML)**")
+                    st.success("**Metode Hibrida  Dapat Digunakan**")
+                elif is_gmpe_ready:
+                    st.warning("**Metode Hibrida Tidak Dapat Digunakan**")
+                    st.caption(f"Lengkapi: {', '.join(missing_hybrid)}")
                 else:
-                    st.warning("⚠️ **Metode Hybrid**")
-                    st.caption(f"Kolom tidak ditemukan: {', '.join(missing_hybrid)}")
+                    st.error("**Metode Hibrida Tidak Dapat Digunakan**")
+                    st.caption("Syarat utama GMPE belum terpenuhi. Karena nilai PGA didapatkan dari metode GMPE ")
 
-            # 3. PENANGANAN VS30 (STANDAR SNI)
-            if 'vs30' not in mapped_columns:
-                st.info("💡 **Info VS30:** Kolom VS30 tidak ditemukan. Sistem akan menggunakan nilai standar **SNI 1726:2019** sebagai asumsi.")
-                # Di tahap kalkulasi nanti, Anda tinggal mengisi df['vs30'] = 350
+            # Penanganan VS30
+            if is_gmpe_ready and 'vs30' not in mapped_columns:
+                st.info("💡 **Catatan VS30:** Kolom VS30 tidak terdeteksi. Sistem akan mengaktifkan opsi **Asumsi Tipe Tanah (SNI 1726:2019)** pada tahap estimasi nanti.")
 
-            # 4. DETEKSI MISSING VALUES (PER BARIS)
-            st.markdown("---")
-            st.markdown("### Validasi Isi Data")
-            
-            if df.isnull().values.any():
-                # Cari baris mana saja yang ada nilai kosongnya
-                rows_with_nan = df[df.isnull().any(axis=1)].index.tolist()
-                # Ubah index menjadi nomor baris (mulai dari 1 atau sesuai urutan CSV)
-                rows_display = [r + 1 for r in rows_with_nan] 
-                
-                st.error(f"⚠️ **Ditemukan Missing Values!**")
-                st.write(f"Data kosong ditemukan pada baris ke: `{rows_display[:10]}`" + ("..." if len(rows_display) > 10 else ""))
-                
-                # Tampilkan detail kolom yang kosong
-                nan_details = df.isnull().sum()
-                st.dataframe(nan_details[nan_details > 0], column_config={0: "Jumlah Kosong"})
-                st.stop()
-            else:
-                st.success("✅ Tidak ada nilai kosong. Data siap diproses.")
-
-            # 5. PREVIEW DATA
+            # Preview & Button
             st.markdown("---")
             st.markdown("### Preview Dataset")
             st.dataframe(df.head(10), use_container_width=True)
 
-            # Simpan ke session state
-            st.session_state['uploaded_data'] = df
-            st.session_state['mapped_columns'] = mapped_columns # Penting untuk tahu nama kolom asli user
-
             if is_gmpe_ready:
-                if st.button(" Lanjut ke Estimasi PGA", type="primary"):
+                if st.button("Lanjut ke Estimasi PGA", type="primary", use_container_width=True):
+                    st.session_state['uploaded_data'] = df
+                    st.session_state['mapped_columns'] = mapped_columns 
                     st.session_state.page = 'Estimasi PGA'
                     st.rerun()
+            else:
+                st.error("Data Tidak Valid")
 
         except Exception as e:
-            st.error(f"Error: {str(e)}")
+            st.error(f"Terjadi kesalahan teknis: {str(e)}")
 
-    else:
-        st.info("Silakan upload file dataset gempa Anda untuk memulai validasi.")
+

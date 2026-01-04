@@ -1,7 +1,3 @@
-# ============================================
-# IMPORT LIBRARIES
-# ============================================
-# Library untuk web app
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -10,121 +6,81 @@ import plotly.express as px
 from datetime import datetime
 from scipy import stats
 import joblib
+import time
+from io import BytesIO
+from sklearn.metrics import mean_squared_error, r2_score
 
-# ============================================
-# FUNCTION HALAMAN ESTIMASI PGA
-# ============================================
 def show():
-    """
-    Halaman Estimasi PGA - Fungsi utama untuk menampilkan halaman estimasi
-    
-    Fitur:
-    1. Penjelasan metode (GMPE & ML) - SELALU TAMPIL
-    2. Check data & metode yang tersedia
-    3. Input parameter tambahan (VS30, lokasi observasi)
-    4. Kalkulasi PGA (GMPE dan/atau Hybrid)
-    5. Tampilkan hasil estimasi
-    6. Visualisasi hasil
-    7. Export hasil (CSV & Excel)
-    """
-    
-    # ============================================
-    # HEADER HALAMAN
-    # Tampilan judul dan subjudul di bagian atas
-    # ============================================
+   
+
     st.markdown("""
     <div style='text-align: center; margin-bottom: 2rem;'>
-        <h1 style='color: #1f2937; font-size: 2.5rem; margin-bottom: 0.5rem;'>
+        <h1 style='font-size: 2.5rem; margin-bottom: 0.5rem;'>
             🔬 Estimasi PGA
         </h1>
-        <p style='color: #6b7280; font-size: 1.1rem;'>
-            Peak Ground Acceleration Estimation
-        </p>
     </div>
     """, unsafe_allow_html=True)
-    # EDITABLE: Ganti judul dan subtitle sesuai kebutuhan
+   
     
-    # ============================================
-    # SECTION 1: PENJELASAN METODE
-    # Bagian ini SELALU TAMPIL meskipun data belum diupload
-    # Tujuan: Memberikan pengetahuan tentang metode sebelum user upload data
-    # ============================================
+   
+    # Penjelasan Metode
     
     st.markdown("## 📚 Metodologi Estimasi PGA")
-    # EDITABLE: Ganti judul section
-    
     st.markdown("""
     Sistem ini menggunakan dua pendekatan untuk estimasi Peak Ground Acceleration (PGA):
     """)
-    # EDITABLE: Ganti deskripsi intro
     
-    # === Tab untuk 2 metode ===
-    # Menggunakan tabs agar user bisa pilih metode yang ingin dibaca
-    tab_gmpe, tab_ml = st.tabs(["🧮 Metode GMPE", "🤖 Metode Machine Learning"])
+    # === Tab untuk kedua metode ===
+    tab_gmpe, tab_ml = st.tabs(["Metode GMPE", "Metode Machine Learning"])
     
-    # ============================================
-    # TAB 1: PENJELASAN METODE GMPE
-    # ============================================
-    with tab_gmpe:
+    # TAB Penjelasan Metode GMPE
+
+    with tab_gmpe:  
         st.markdown("### Ground Motion Prediction Equations (GMPE)")
-        # EDITABLE: Ganti judul metode
         
+        # Semua informasi digabung dalam satu blockquote agar menyatu dalam satu box
         st.markdown("""
-        **Metode:** Boore-Atkinson 2008 (Next Generation Attenuation)
+        **Metode Utama:** Boore-Atkinson 2008
         
         **Deskripsi:**
         
-        GMPE adalah persamaan empiris berbasis fisika yang memprediksi gerakan tanah 
-        berdasarkan karakteristik gempa dan jarak. Model Boore-Atkinson 2008 dikembangkan 
-        dari database gempa global dan telah divalidasi untuk wilayah tektonik aktif seperti Aceh.
+        GMPE adalah model matematis berbasis fisika yang digunakan untuk memprediksi seberapa kuat guncangan tanah di lokasi tertentu saat gempa terjadi. 
+        Model Boore-Atkinson 2008 dipilih karena telah divalidasi secara global dan terbukti handal untuk wilayah dengan tektonik aktif seperti Aceh.
         
-        **Parameter Input:**
-        - **Magnitude (M)**: Kekuatan gempa (Moment Magnitude, Mw)
-        - **Jarak (Rjb)**: Joyner-Boore distance - jarak horizontal dari episenter ke site (km)
-        - **VS30**: Kecepatan gelombang geser rata-rata hingga 30m (m/s)
+        **Parameter yang Dibutuhkan:**
+                    
+        Untuk menghasilkan estimasi yang akurat, metode ini memerlukan tiga data utama:
+        - **Magnitudo ($M_w$)**: Skala kekuatan energi gempa di pusatnya.
+        - **Jarak Joyner-Boore ($R_{jb}$)**: Jarak horizontal terdekat dari lokasi Anda ke titik di atas pusat gempa (km).
+        - **$V_{S30}$**: Kondisi kekerasan tanah lokal (kecepatan gelombang geser hingga kedalaman 30 meter).
         
-        **Formula Umum:**
-```
-        ln(Y) = F_M(M) + F_D(M, R) + F_S(VS30) + ε
+        **Formula:**
         
-        Dimana:
-        - Y = PGA (Peak Ground Acceleration)
-        - F_M = Fungsi magnitude
-        - F_D = Fungsi atenuasi jarak
-        - F_S = Fungsi site amplification
-        - ε = Error term
-```
+        $$ln(Y) = F_M(M) + F_D(M, R) + F_S(V_{S30}) + \epsilon$$
         
-        **Kelebihan:**
-        - ✅ Berbasis fisika gempa yang solid
-        - ✅ Parameter input minimal (magnitude, jarak, VS30)
-        - ✅ Proven accuracy untuk Aceh region
-        - ✅ Cepat dan efisien
+        Dengan:
+        - **$F_M$ (Fungsi Magnitudo):** Menghitung pengaruh besarnya kekuatan gempa.
+        - **$F_D$ (Fungsi Jarak):** Menghitung bagaimana guncangan melemah seiring bertambahnya jarak (atenuasi).
+        - **$F_S$ (Fungsi Kondisi Tanah):** Menghitung penguatan guncangan jika tanah cenderung lunak (amplifikasi).
+        - **$\epsilon$ (Variabel Error):** Mengakomodasi ketidakpastian alamiah dalam perhitungan.
         
-        **Keterbatasan:**
-        - ⚠️ Tidak menangkap variabilitas lokal secara detail
-        - ⚠️ Generalisasi dari database global
+        **Analisis Metode:**
         
-        **Referensi:**
-        
-        Boore, D. M., & Atkinson, G. M. (2008). Ground-motion prediction equations for the 
-        average horizontal component of PGA, PGV, and 5%-damped PSA at spectral periods between 
-        0.01 s and 10.0 s. *Earthquake Spectra*, 24(1), 99-138.
-        """)
-        # EDITABLE: GANTI SEMUA KONTEN INI DENGAN PENJELASAN GMPE ANDA
-        # - Metode yang digunakan (Boore-Atkinson 2008, Campbell-Bozorgnia, dll)
-        # - Deskripsi singkat
-        # - Parameter input
-        # - Formula (jika perlu)
-        # - Kelebihan dan keterbatasan
-        # - Referensi paper yang relevan
+        - **Kelebihan:** Sangat cepat untuk komputasi real-time, berbasis parameter fisik yang solid, dan efisien karena hanya membutuhkan input minimal.
+        - **Keterbatasan:** Karena bersifat generalisasi dari data global, model ini mungkin tidak menangkap detail unik (variabilitas lokal) sesensitif model Machine Learning.
     
-    # ============================================
-    # TAB 2: PENJELASAN METODE MACHINE LEARNING
-    # ============================================
+        
+        **Referensi Ilmiah:**
+        *Boore, D. M., & Atkinson, G. M. (2008). Earthquake Spectra, 24(1), 99-138.*
+        
+        
+        """)
+    
+    # TAB Penjelasan Metode Hybrid
+ 
     with tab_ml:
-        st.markdown("### Machine Learning (Hybrid GMPE + MLP)")
-        # EDITABLE: Ganti judul metode
+        st.markdown("### Machine Learning (GMPE dan Neural Network)")
+
         
         st.markdown("""
         **Metode:** Multi-Layer Perceptron (MLP) Neural Network
@@ -136,80 +92,51 @@ def show():
         Model dilatih menggunakan data historis gempa USGS untuk wilayah Aceh (1900-2025).
         
         **Arsitektur Model:**
-        - **Input Layer**: 7 features (magnitude, depth, NST, Gap, RMS, magNST, depthError)
-        - **Hidden Layers**: 2-3 layers dengan 64-128 neurons
-        - **Activation**: ReLU untuk hidden layers, Linear untuk output
+        - **Input Layer**: 23 fitur (Longitude, Latitude, depth, Nst, Gap, Rms, MagNST, DepthError, Soil_SA, Soil_SB, Soil_SC, Soil_SD, 
+                    flag_outlier_depth, flag_outlier_Nst, flag_outlier_Gap, flag_outlier_Rms, flag_outlier_MagNst, flag_outlier_DepthError,
+                    flag_missing_gap, flag_missing_rms, flag_missing_magNst, flag_missing_depthError, flag_missing_nst)
+        - **Hidden Layers**: 2 Lapisan menggunakan 64 neurons untuk lapisan pertama dan 32 neurons untuk lapisan kedua
+        - **Activation**: ReLU untuk hidden layers
         - **Output**: PGA prediction (g)
         
         **Parameter Input:**
-        - **Magnitude**: Kekuatan gempa
-        - **Depth**: Kedalaman hiposenter (km)
-        - **NST**: Number of seismic stations
-        - **Gap**: Azimuthal gap (derajat)
-        - **RMS**: Root mean square residual (detik)
-        - **magNST**: Stations used for magnitude
-        - **depthError**: Uncertainty in depth (km)
+        - **Magnitude**: Skala kekuatan energi gempa yang terjadi yang diukur dalam satuan Mw.
+        - **Depth**: Kedalaman titik pusat gempa (hiposenter) di bawah permukaan bumi (km).
+        - **Nst**: Jumlah total stasiun seismik yang berhasil merekam data kejadian gempa tersebut.
+        - **Gap**: Celah sudut terbesar antar stasiun perekam; semakin kecil nilainya, semakin akurat penentuan lokasi gempa.
+        - **RMS**: Rata-rata selisih waktu tempuh gelombang; nilai kecil menunjukkan data waktu yang sangat akurat.
+        - **magNST**: Jumlah stasiun spesifik yang digunakan untuk menghitung nilai Magnitudo.
+        - **depthError**: Tingkat ketidakpastian dalam penentuan kedalaman gempa (km).
         
         **Preprocessing:**
-        - Standardization menggunakan StandardScaler
-        - Feature scaling untuk input dan output
-        - Data split: 80% training, 20% testing
-        
-        **Training:**
-        - **Loss Function**: Mean Squared Error (MSE)
-        - **Optimizer**: Adam (learning rate: 0.001)
-        - **Epochs**: 100-200 dengan early stopping
-        - **Validation**: K-Fold Cross-Validation (k=5)
-        
+        - Standardization Proses menyamakan skala data agar semua variabel memiliki rata-rata 0 dan standar deviasi 1. 
+        - Data split: Data dibagi menjadi dua bagian yaitu **80% untuk Training** (digunakan model untuk belajar pola) dan **20% untuk Testing** (digunakan untuk menguji seberapa pintar model menghadapi data baru yang belum pernah dilihat sebelumnya).
+                
         **Performance Metrics:**
-        - **MAE (Mean Absolute Error)**: ~0.05 g
-        - **RMSE (Root Mean Square Error)**: ~0.08 g
-        - **R² Score**: ~0.85
+        - **RMSE (Root Mean Square Error)**: Ukuran standar deviasi dari residu prediksi
+        - **R² Score**: Mengukur sebarapa mampu model menjelaskan variasi data.
         
         **Kelebihan:**
-        - ✅ Menangkap variabilitas regional spesifik Aceh
-        - ✅ Learning dari pola historis gempa lokal
-        - ✅ Dapat menangkap non-linearitas kompleks
-        - ✅ Complementary dengan GMPE (hybrid approach)
+        - ✅ Mampu menangkap karakteristik unik dan variabilitas regional spesifik wilayah Aceh.
+        - ✅ Dapat memproses hubungan non-linear antar parameter yang sulit dibaca oleh rumus matematika biasa.
         
         **Keterbatasan:**
-        - ⚠️ Memerlukan data lengkap (9 kolom)
-        - ⚠️ Black-box model (kurang interpretable)
-        - ⚠️ Bergantung pada kualitas data training
+        - ⚠️ Memerlukan input parameter yang lengkap (23 fitur) agar hasil estimasi maksimal.
+        - ⚠️ Sangat bergantung pada kebersihan dan akurasi data historis yang dimasukkan.
         
-        **Framework:**
-        - TensorFlow/Keras untuk model development
-        - Scikit-learn untuk preprocessing dan validation
-        
+               
         **Catatan:**
         
         Model ML ini **bukan pengganti GMPE**, melainkan **komplemen** yang memanfaatkan 
-        informasi tambahan dari parameter seismotectonic untuk meningkatkan akurasi estimasi 
-        PGA di wilayah Aceh.
+        informasi tambahan dari data gempa dengan harapan meningkatkan akurasi estimasi PGA.
         """)
-        # EDITABLE: GANTI SEMUA KONTEN INI DENGAN PENJELASAN ML MODEL ANDA
-        # - Arsitektur model (MLP, Random Forest, XGBoost, dll)
-        # - Parameter input yang digunakan
-        # - Preprocessing steps
-        # - Training parameters
-        # - Performance metrics dari hasil training Anda
-        # - Kelebihan dan keterbatasan
-        # - Framework yang digunakan
-    
+           
     st.markdown("---")
-    # Garis pemisah horizontal
-    
-    # ============================================
-    # CEK APAKAH DATA SUDAH DIUPLOAD
-    # ============================================
-    
-    # Flag untuk cek data - mengecek apakah key 'uploaded_data' ada di session state
+
+    # Pengecekan Jika Data Belum Di Upload
+       
     data_available = 'uploaded_data' in st.session_state
     
-    # ============================================
-    # JIKA DATA BELUM DIUPLOAD
-    # Tampilkan warning dan preview interface yang disabled
-    # ============================================
     if not data_available:
         
         # Info box warning
@@ -218,172 +145,95 @@ def show():
         
         Untuk melakukan estimasi PGA, silakan upload dataset terlebih dahulu di halaman **Data**.
         """)
-        # EDITABLE: Ganti pesan warning
-        
-        # Button ke halaman Data (centered menggunakan 3 columns)
         col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 1])
         
         with col_btn2:
             if st.button("📊 Ke Halaman Data", type="primary", use_container_width=True):
-                # Set page navigation ke Data
                 st.session_state.page = 'Data'
-                # Reload halaman
                 st.rerun()
         
         st.markdown("---")
         
-        # ============================================
-        # PREVIEW INTERFACE (DISABLED)
-        # Tujuan: Biarkan user tahu ada apa saja di halaman ini
-        # ============================================
         
         st.markdown("### Parameter Estimasi")
         st.caption("*Preview interface - aktif setelah upload data*")
-        # EDITABLE: Ganti caption
-        
-        # # Preview VS30 input (disabled)
-        # st.markdown("#### 1. VS30 (Site Condition)")
-        # st.text_input("VS30 (m/s):", value="350.0", disabled=True)
-        
-        # Preview Lokasi input (disabled)
-        st.markdown("#### 1. Lokasi Observasi")
+        st.markdown("#### Lokasi Observasi")
         col1, col2 = st.columns(2)
         with col1:
             st.text_input("Latitude:", value="5.5483", disabled=True)
         with col2:
             st.text_input("Longitude:", value="95.3238", disabled=True)
-        
-        # Button estimasi (disabled)
         st.markdown("### Jalankan Estimasi")
         st.button("Mulai Estimasi PGA", type="primary", disabled=True, use_container_width=True)
         st.caption("*Upload data terlebih dahulu untuk mengaktifkan estimasi*")
-        # EDITABLE: Ganti caption
-        
-        # STOP EXECUTION DI SINI
-        # Tidak lanjut ke code di bawah karena data belum ada
         st.stop()
     
-    # ============================================
-    # JIKA DATA SUDAH DIUPLOAD - LANJUTKAN
-    # Code di bawah ini hanya dijalankan jika data_available = True
-    # ============================================
-    
-    # Load data dari session state
-    df = st.session_state['uploaded_data']  # DataFrame yang sudah diupload
+    # Jika Data Sudah Di Upload
+    df = st.session_state['uploaded_data']  
     mapped_columns = st.session_state.get('mapped_columns', {})  # Mapping nama kolom
     
-    # ============================================
-    # CEK METODE YANG TERSEDIA
-    # ============================================
-    
-    # Check apakah kolom magnitude ada
+   
+    # Check Metode yang dapat Dilakukan Kalkulasi
+  
+    # Check magnitudo untuk GMPE
     has_magnitude = 'magnitude' in mapped_columns
     
-    # Daftar kolom yang diperlukan untuk Hybrid (ML)
+    # Check variabel untuk GMPE
     hybrid_columns = ['magnitude', 'depth', 'latitude', 'longitude', 
                       'nst', 'gap', 'rms', 'magnst', 'deptherror']
     
-    # Cari kolom mana yang belum ada
+    # Check nama Kolom
     missing_hybrid = [col for col in hybrid_columns if col not in mapped_columns]
     
-    # Tentukan metode yang ready
-    is_gmpe_ready = has_magnitude  # GMPE hanya perlu magnitude
-    is_hybrid_ready = len(missing_hybrid) == 0  # Hybrid perlu semua kolom
     
-    # ============================================
-    # SECTION 2: STATUS METODE YANG TERSEDIA
-    # Tampilkan info metode mana yang bisa dijalankan
-    # ============================================
+    is_gmpe_ready = has_magnitude  
+    is_hybrid_ready = len(missing_hybrid) == 0  
+    
+ 
+    # Status Metode yang tersedia
+ 
     
     st.markdown("### 📋 Status Metode Estimasi")
     
-    # 2 kolom untuk status GMPE dan Hybrid
+    # kolom untuk status GMPE dan Hybrid
     col_status1, col_status2 = st.columns(2)
     
     # Status GMPE
     with col_status1:
         if is_gmpe_ready:
             # GMPE siap - tampilkan success box
-            st.success("""**Metode GMPE Tersedia**""")
+            st.success("""**Metode GMPE Dapat Digunakan**""")
             if 'vs30' not in mapped_columns:
                 st.warning("⚠️ VS30 menggunakan default SNI")
-            # EDITABLE: Ganti metode GMPE yang digunakan
         else:
             # GMPE tidak siap - tampilkan error box
             st.error("""
-            ❌ **Metode GMPE Tidak Tersedia**
-            
+            ❌ **Metode GMPE Tidak Dapat Digunakan**
+                     
             - Kolom magnitude tidak ditemukan
             """)
     
-    # Status Hybrid (ML)
+    # Status Hybrid
     with col_status2:
         if is_hybrid_ready:
-            # Hybrid siap - tampilkan success box
-            st.success("✅ **Metode Hybrid (AI): Tersedia**")
+            st.success("✅ **Metode Hybrid Dapat Digunakan**")
             st.caption("Optimasi: Menggunakan Neural Network (MLP).")
-            # EDITABLE: Ganti metode ML yang digunakan
         else:
-            # Hybrid tidak siap - tampilkan warning box
             st.warning(f"""
-            ⚠️ **Metode Hybrid Tidak Tersedia**
+            ⚠️ **Metode Hybrid Tidak Dapat Digunakan**
             
             - Kolom kurang: {', '.join(missing_hybrid)}
-            - Hanya GMPE yang akan dijalankan
+            - Hanya Metode GMPE yang akan dijalankan
             """)
     
     st.markdown("---")
     
-    # # ============================================
-    # # SECTION 3: PREVIEW DATA
-    # # Tampilkan ringkasan data yang sudah diupload
-    # # ============================================
-    
-    # st.markdown("### 📊 Preview Dataset")
-    
-    # # 3 metrics untuk info data
-    # col_info1, col_info2, col_info3 = st.columns(3)
-    
-    # # Metric 1: Total data
-    # with col_info1:
-    #     st.metric("Total Data", f"{len(df):,} gempa")
-    #     # :, untuk format ribuan (contoh: 1,234)
-    
-    # # Metric 2: Average magnitude
-    # with col_info2:
-    #     if 'magnitude' in mapped_columns:
-    #         mag_col = mapped_columns['magnitude']  # Nama kolom asli dari dataset
-    #         st.metric("Magnitude Avg", f"{df[mag_col].mean():.2f}")
-    #         # :.2f untuk 2 desimal
-    
-    # # Metric 3: Average depth
-    # with col_info3:
-    #     if 'depth' in mapped_columns:
-    #         depth_col = mapped_columns['depth']  # Nama kolom asli dari dataset
-    #         st.metric("Depth Avg", f"{df[depth_col].mean():.1f} km")
-    #         # :.1f untuk 1 desimal
-    
-    # # Expander untuk lihat data lengkap (optional, bisa dibuka/tutup)
-    # with st.expander("👁️ Lihat Data (10 baris pertama)"):
-    #     st.dataframe(df.head(10), use_container_width=True)
-    #     # head(10) = 10 baris pertama
-    #     # EDITABLE: Ganti jumlah baris yang ditampilkan
-    
-    # st.markdown("---")
-    
-    # ============================================
-    # SECTION 4: INPUT PARAMETER ESTIMASI
-    # ============================================
-    
     st.markdown("### Parameter Estimasi")
-    
-    # ============================================
-    # PARAMETER 1: VS30 (SITE CONDITION)
-    # ============================================
-    
-    st.markdown("#### 1. VS30 (Site Condition)")
 
-    # 1. Definisi Mapping sesuai SNI & Batas Paper Anda
+    # VS30 (SITE CONDITION)
+    st.markdown("#### VS30 (Site Condition)")
+
+    # Mapping VS30 Sesuai SNI
     tanah_mapping = {
         'SA - Batuan Keras': 1300,
         'SB - Batuan': 760,
@@ -392,61 +242,70 @@ def show():
         'SE - Tanah Lunak': 180
     }
     
-    # Info box penjelasan VS30
-    st.info("""
+    st.markdown("""
     **VS30** adalah kecepatan gelombang geser rata-rata hingga kedalaman 30 meter.
     Nilai ini menggambarkan kondisi tanah di lokasi observasi.
     """)
-    # EDITABLE: Ganti penjelasan VS30
     
-    # Check apakah kolom VS30 ada di dataset
+    # Pengecekan Data VS30
     if 'vs30' in mapped_columns:
-        # VS30 ADA di dataset
+        vs30_col = mapped_columns['vs30'] 
+
+        initial_rows = len(df)
         
-        vs30_col = mapped_columns['vs30']  # Nama kolom asli
-        vs30_from_data = df[vs30_col].mean()  # Hitung rata-rata VS30
+        # Filter data: Only keep rows within Boore-Atkinson 2008 valid range (180 - 1300 m/s)
+        df = df[(df[vs30_col] >= 180) & (df[vs30_col] <= 1300)].copy()
         
-        st.success(f"✅ VS30 ditemukan di dataset (rata-rata: {vs30_from_data:.1f} m/s)")
+        final_rows = len(df)
+        dropped_rows = initial_rows - final_rows
+        
+        if dropped_rows > 0:
+            st.warning(f"⚠️ {dropped_rows} rows removed: VS30 values were outside BA08 valid range (180-1300 m/s).")
+        
+        # 
+        if not df.empty:
+            vs30_from_data = df[vs30_col].mean()
+            st.success(f"✅ Using {final_rows} valid records (Mean VS30: {vs30_from_data:.1f} m/s)")
+            
+            st.session_state['run_mode'] = 'single'
+            st.session_state['single_vs30'] = vs30_from_data
+        else:
+            st.error("❌ Critical Error: No valid VS30 data found within the 180-1300 m/s range!")
+            st.stop()
             
     else:
-        vs30_value = 350.0 
     
         st.warning("⚠️ Kolom VS30 tidak ditemukan.")
         st.info("""
         **Mode Analisis Komparatif Aktif:** Sistem akan menghitung estimasi PGA untuk seluruh klasifikasi situs berdasarkan **SNI 1726:2019**. 
         Hasil akan ditampilkan dalam bentuk perbandingan antar kelas tanah.
         """)
-        
-        # Tampilkan tabel referensi yang akan digunakan
+    
         with st.expander("Lihat Referensi Nilai VS30 yang Digunakan"):
             st.table(pd.DataFrame({
                 'Kelas Situs': tanah_mapping.keys(),
                 'Nilai VS30 (m/s)': tanah_mapping.values()
             }))
-        # Simpan dict mapping ke session state untuk loop kalkulasi nanti
+
         st.session_state['run_mode'] = 'multi'
         st.session_state['active_vs30_map'] = tanah_mapping
         
     st.markdown("<br>", unsafe_allow_html=True)
-    # Spasi kosong untuk pemisah
+   
     
-    # ============================================
-    # PARAMETER 1: LOKASI OBSERVASI (SITE)
-    # ============================================
     
-    st.markdown("#### 1. Lokasi Tagrt Estimasi")
+    # LOKASI OBSERVASI 
+    st.markdown("#### Lokasi Target Estimasi")
     
-    # Info box penjelasan lokasi observasi
     st.info("""
     Masukkan koordinat lokasi yang ingin Anda analisis (Lokasi Proyek/Kota). 
     Sistem akan menghitung dampak PGA di titik ini dari **seluruh kejadian gempa** yang ada dalam dataset Anda.
     """)
-    # EDITABLE: Ganti penjelasan dan contoh sesuai region Anda
-    # Membuat 2 kolom untuk input Latitude dan Longitude
+
     col_lat, col_lon = st.columns(2)
 
     with col_lat:
-    # Ini adalah titik yang ingin dilihat PGA-nya
+    
         target_latitude = st.number_input(
             "🌍 Latitude Lokasi Target:",
             min_value=-11.0, max_value=6.0, value=0.0, format="%.4f",
@@ -460,16 +319,14 @@ def show():
             help="Contoh: 95.3238 (Banda Aceh)"
         )
     
-    # ============================================
-    # SECTION 5: BUTTON MULAI ESTIMASI
-    # ============================================
+    # Mulai Estimasi
     model_mlp = joblib.load('model_pga_mlp.pkl')
     scaler_x = joblib.load('scaler_x.pkl')
     scaler_y = joblib.load('scaler_y.pkl')
 
     def haversine(lat1, lon1, lat2, lon2):
             """Menghitung jarak episentral (km) antara dua koordinat"""
-            R = 6371  # Radius bumi (km)
+            R = 6371  
             lat1, lon1, lat2, lon2 = map(np.radians, [lat1, lon1, lat2, lon2])
             dlat, dlon = lat2 - lat1, lon2 - lon1
             a = np.sin(dlat / 2)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2)**2
@@ -523,11 +380,24 @@ def show():
                 lower_bound = Q1 - 1.5 * IQR
                 upper_bound = Q3 + 1.5 * IQR
                 
-                # Beri flag 1 jika di luar bound, 0 jika di dalam
                 new_df[f'flag_outlier_{col}'] = ((new_df[col] < lower_bound) | (new_df[col] > upper_bound)).astype(int)
             else:
                 new_df[f'flag_outlier_{col}'] = 0
         return new_df
+    
+    def classify_vs30(vs30_val):
+        """
+        Mengklasifikasikan nilai VS30 ke dalam kategori SNI 1726:2019
+        untuk diumpankan ke fitur One-Hot Encoding MLP (Soil_SA s/d Soil_SE)
+        """
+        if vs30_val >= 760:
+            return 'SA' if vs30_val >= 1300 else 'SB'
+        elif 360 <= vs30_val < 760:
+            return 'SC'
+        elif 180 <= vs30_val < 360:
+            return 'SD'
+        else:
+            return 'SE'
     
     st.markdown("### Jalankan Estimasi")
     
@@ -537,66 +407,48 @@ def show():
         if target_latitude == 0.0:
             st.error("Mohon masukkan koordinat lokasi target Anda.")
             st.stop()
-        
-        # ============================================
-        # PROGRESS BAR DAN STATUS TEXT
-        # ============================================
-        
-        # Buat progress bar (0-100%)
+
         progress_bar = st.progress(0)
         status_text = st.empty()
         
-        # ============================================
-        # STEP 1: PERSIAPAN DATA
-        # ============================================
-        
-        status_text.text("⏳ Mempersiapkan data...")
-        progress_bar.progress(10)  # Update progress ke 10%
-        
-        # Copy dataframe untuk kalkulasi (agar tidak ubah original)
+        # Mencari Jarak RJB
+        status_text.text("📏 Menghitung jarak episenter...")
+        progress_bar.progress(10)  
         df_calc = df.copy()
 
-        # Nama kolom episenter di dataset (hasil mapping dari hal. data)
         epi_lat_col = mapped_columns['latitude']
         epi_lon_col = mapped_columns['longitude']
-        
-        progress_bar.progress(20)  # Update progress ke 20%
-        
-        # ============================================
-        # STEP 2: KALKULASI JARAK (Rjb)
-        # Joyner-Boore distance dari episenter ke site
-        # ============================================
-        
-        
-        status_text.text("📏 Menghitung jarak episenter...")
-        # Masukkan fungsi haversine di sini atau di luar button
+        mag_col = mapped_columns['magnitude']
+        dep_col = mapped_columns['depth']
+
         df_calc['RJB_km'] = df_calc.apply(
             lambda row: haversine(row[epi_lat_col], row[epi_lon_col], target_latitude, target_longitude), 
             axis=1
         )
-        progress_bar.progress(30)  # Update progress ke 30%
-
-        # ============================================
-        # STEP 3: FILTERING DATA (Logic Anda)
-        # ============================================
+        
+        progress_bar.progress(20)  
+        
+        # Filtering Data VS30, depth dan mag
         status_text.text("🧹 Melakukan filtering data...")
 
+        condition = (df_calc[mag_col] >= 5.0) & (df_calc[dep_col] > 0) & (df_calc['RJB_km'] <= 200)
         
-        mag_col = mapped_columns['magnitude']
-        dep_col = mapped_columns['depth']
+        # Filter VS30 jika kolomnya ada (BA08 Range: 180 - 1300)
+        if 'vs30' in mapped_columns:
+            vs30_col = mapped_columns['vs30']
+            condition &= (df_calc[vs30_col] >= 180) & (df_calc[vs30_col] <= 1300)
+            
+        data_clean = df_calc[condition].copy()
         
-        # Filtering Mw >= 5.0, Depth > 0, dan Jarak <= 200km
-        data_clean = df_calc[
-            (df_calc[mag_col] >= 5.0) & 
-            (df_calc[dep_col] > 0) & 
-            (df_calc['RJB_km'] <= 200)
-        ].copy()
-        
-        progress_bar.progress(45)
+        if data_clean.empty:
+            st.error("❌ Tidak ada data yang memenuhi kriteria validitas (M>=5, Dist<=200km, VS30 180-1300).")
+            st.stop()
 
-        # ============================================
-        # STEP 4: ANALISIS GUTENBERG-RICHTER (b-value)
-        # ============================================
+        progress_bar.progress(40)
+       
+     
+        # Analisis Gutenberg Ritcher Law
+       
         status_text.text("📊 Menghitung parameter seismisitas (b-value)...")
         
         if len(data_clean) > 2:
@@ -613,65 +465,55 @@ def show():
             
         progress_bar.progress(60)
 
-        # ============================================
-        # STEP 5: GMPE MULTI-SCENARIO (BOORE-ATKINSON)
-        # ============================================
-        status_text.text("🧬 Menghitung PGA untuk 5 Tipe Tanah...")
+
+        # Metode GMPE 
+        status_text.text("🧬 Menghitung PGA GMPE...")
         
         tanah_mapping = {
             'SA': 1300, 'SB': 760, 'SC': 520, 'SD': 250, 'SE': 180
         }
 
         final_scenario = []
-        for label, vs30_val in tanah_mapping.items():
+        for label, vs_val in tanah_mapping.items():
             subset = data_clean.copy()
             subset['Tipe_Tanah'] = label
-            subset['Vs30_m_s'] = vs30_val
+            if 'vs30' in mapped_columns:
+                subset['Vs30_m_s'] = subset[mapped_columns['vs30']]
+            else:
+                subset['Vs30_m_s'] = vs_val
             # Hitung PGA menggunakan fungsi BA08
-            subset['PGA_GMPE'] = BA08(subset[mag_col], subset['RJB_km'], vs30_val)
+            subset['PGA_GMPE'] = BA08(subset[mag_col], subset['RJB_km'], subset['Vs30_m_s'])
             final_scenario.append(subset)
         
-        # Dataset Final yang Anda inginkan
+    
         data_final = pd.concat(final_scenario, ignore_index=True)
         
-        progress_bar.progress(100)
+        progress_bar.progress(70)
         status_text.text("✅ Estimasi Selesai!")
 
-        # Menampilkan tabel hasil
         st.markdown("### 📋 Dataset Hasil Estimasi (Multi-Skenario)")
         st.dataframe(data_final)
         
-        # ============================================
-        # STEP 6: ESTIMASI HYBRID (MACHINE LEARNING)
-        # Hanya dijalankan jika Hybrid ready (semua kolom lengkap)
-        # ============================================
-        
-        if is_hybrid_ready:
+
+        # Estimasi GMPE + ML
+
+        if is_hybrid_ready and ('model_mlp' in globals() or 'model_mlp' in locals()):
             status_text.text("🤖 Menjalankan model Machine Learning...")
-            progress_bar.progress(70)  # Update progress ke 70%
             
-        # ============================================
-        # STEP 6: ESTIMASI HYBRID (NEURAL NETWORK MLP)
-        # ============================================
-        # Hanya dijalankan jika file model (.pkl) berhasil diload
-        if 'model_mlp' in globals() or 'model_mlp' in locals():
+            # Kalkulasi Menggunakan neural Network
             status_text.text("🤖 Menjalankan model Machine Learning (MLP)...")
-            progress_bar.progress(70)
 
-            # 1. Ambil nama kolom teknis hasil mapping user
-            nst_col = mapped_columns.get('nst', 'nst')
-            gap_col = mapped_columns.get('gap', 'gap')
-            rms_col = mapped_columns.get('rms', 'rms')
-            magnst_col = mapped_columns.get('magnst', 'magnst')
-            deperr_col = mapped_columns.get('deptherror', 'deptherror')
+            nst_col = mapped_columns.get('nst')
+            gap_col = mapped_columns.get('gap')
+            rms_col = mapped_columns.get('rms')
+            magnst_col = mapped_columns.get('magnst')
+            deperr_col = mapped_columns.get('deptherror')
+            epi_lat_col = mapped_columns.get('latitude')
+            epi_lon_col = mapped_columns.get('longitude')
+            dep_col = mapped_columns.get('depth')
 
-            # 2. Deteksi Outlier secara Dinamis (Flagging 0/1)
-            # Dilakukan per skenario tanah agar data tetap konsisten
-            hybrid_results = []
-            
-            # Urutan 22 kolom fitur yang WAJIB untuk scaler_x.pkl Anda
             mlp_features_order = [
-                epi_lat_col, epi_lon_col, dep_col, nst_col, gap_col, rms_col, magnst_col,
+                'latitude', 'longitude', 'depth', 'nst', 'gap', 'rms', 'magNst',
                 'Soil_SA', 'Soil_SB', 'Soil_SC', 'Soil_SD', 'Soil_SE',
                 'flag_missing_gap', 'flag_missing_rms', 'flag_missing_magNst', 
                 'flag_missing_depthError', 'flag_missing_nst',
@@ -679,382 +521,338 @@ def show():
                 'flag_outlier_depth', 'flag_outlier_depthError'
             ]
 
-            # Kita olah data_final yang sudah berisi 5 skenario tanah dari Step 5
+            hybrid_results = []
             for label in tanah_mapping.keys():
-                # Ambil subset per tipe tanah
                 subset = data_final[data_final['Tipe_Tanah'] == label].copy()
-                
-                # A. Buat One-Hot Encoding Soil (SA-SE)
-                for s in tanah_mapping.keys():
-                    subset[f'Soil_{s}'] = 1 if label == s else 0
-                
-                # B. Buat Flag Missing (Set 0 karena data wajib diimputasi user)
-                for m in ['gap', 'rms', 'magNst', 'depthError', 'nst']:
-                    subset[f'flag_missing_{m}'] = 0
-                
-                # C. Buat Flag Outlier (Dinamis dengan IQR)
-                # cols_to_check = {
-                #     'gap': gap_col, 'rms': rms_col, 'magNst': magnst_col, 
-                #     'depth': dep_col, 'depthError': deperr_col
-                # }
-                # for feat, col_name in cols_to_check.items():
-                #     if col_name in subset.columns:
-                #         Q1, Q3 = subset[col_name].quantile(0.25), subset[col_name].quantile(0.75)
-                #         IQR = Q3 - Q1
-                #         subset[f'flag_outlier_{feat}'] = ((subset[col_name] < (Q1 - 1.5*IQR)) | 
-                #                                          (subset[col_name] > (Q3 + 1.5*IQR))).astype(int)
-                #     else:
-                #         subset[f'flag_outlier_{feat}'] = 0
-                # C. Flag Outlier (SINKRON DENGAN KODE IQR ANDA)
-                outlier_features = ['gap', 'rms', 'magNst', 'depth', 'depthError']
-                cols_mapping = {
-                    'gap': gap_col, 'rms': rms_col, 'magNst': magnst_col, 
-                    'depth': dep_col, 'depthError': deperr_col
+                if subset.empty: continue
+
+                # Penentuan Tipe Tanah
+                for idx, row in subset.iterrows():
+                    # Tentukan kategori tanah berdasarkan VS30 asli
+                    target_class = classify_vs30(row['Vs30_m_s'])
+                    for s in tanah_mapping.keys():
+                        subset.loc[idx, f'Soil_{s}'] = 1 if target_class == s else 0
+
+                    rename_map = {
+                    epi_lat_col: 'latitude',
+                    epi_lon_col: 'longitude',
+                    dep_col: 'depth',
+                    nst_col: 'nst',
+                    gap_col: 'gap',
+                    rms_col: 'rms',
+                    magnst_col: 'magNst', 
+                    deperr_col: 'depthError' 
                 }
+                subset = subset.rename(columns=rename_map)
 
-                for feat in outlier_features:
-                    col_name = cols_mapping[feat]
-                    Q1 = subset[col_name].quantile(0.25)
-                    Q3 = subset[col_name].quantile(0.75)
+                cols_to_flag = ['gap', 'rms', 'magNst', 'depthError', 'nst']
+
+                # Flag Missing & Outlier 
+                for m in cols_to_flag:
+                    subset[f'flag_missing_{m}'] = 0 
+
+                # Outlier Detection (IQR)
+                target_outliers = ['nst', 'gap', 'rms', 'magNst', 'depth', 'depthError']
+                for feat in target_outliers:
+                    Q1 = subset[feat].quantile(0.25)
+                    Q3 = subset[feat].quantile(0.75)
                     IQR = Q3 - Q1
-                    lower_bound = Q1 - 1.5 * IQR
-                    upper_bound = Q3 + 1.5 * IQR
-                    
-                    # Persis kodingan Python Anda
                     subset[f'flag_outlier_{feat}'] = np.where(
-                        (subset[col_name] < lower_bound) | (subset[col_name] > upper_bound), 1, 0
+                        (subset[feat] < (Q1 - 1.5*IQR)) | (subset[feat] > (Q3 + 1.5*IQR)), 1, 0
                     )
-                if not subset.empty:
-                    X_input = subset[mlp_features_order]
-                    X_scaled = scaler_x.transform(X_input)
-                    y_pred_scaled = model_mlp.predict(X_scaled)
-                    # Kembalikan ke nilai asli 'g'
-                    pga_inv = scaler_y.inverse_transform(y_pred_scaled.reshape(-1, 1))
-                    # Clipping untuk mencegah nilai negatif secara fisik
-                    subset['PGA_MLP'] = np.maximum(pga_inv, 0.0001)
+                # Prediksi MLP
+                # Pastikan urutan mlp_features_order SAMA dengan saat training!
+                X_input = subset[mlp_features_order]
+                X_scaled = scaler_x.transform(X_input)
+                y_pred_scaled = model_mlp.predict(X_scaled)
+                pga_inv = scaler_y.inverse_transform(y_pred_scaled.reshape(-1, 1))
+                subset['PGA_MLP'] = np.maximum(pga_inv, 0.0001)
+                
                 hybrid_results.append(subset)
+
             data_final = pd.concat(hybrid_results, ignore_index=True)
-
-                # D. Jalankan Prediksi MLP
-                # Pastikan semua kolom teknis yang mungkin tidak ada diisi 0
-            #     for col in mlp_features_order:
-            #         if col not in subset.columns:
-            #             subset[col] = 0
-                
-            #     X_input = subset[mlp_features_order]
-            #     X_scaled = scaler_x.transform(X_input)
-            #     y_pred_scaled = model_mlp.predict(X_scaled)
-                
-            #     # Inverse transform ke satuan asli 'g'
-            #     subset['PGA_MLP'] = scaler_y.inverse_transform(y_pred_scaled.reshape(-1, 1))
-                
-            #     hybrid_results.append(subset)
-
-            # # Gabungkan kembali hasil akhir
-            # data_final = pd.concat(hybrid_results, ignore_index=True)
-        
-            
-            progress_bar.progress(90)
+            progress_bar.progress(95)
             status_text.text("✅ Estimasi Hybrid Selesai!")
+            
+        
         else:
-            st.error("Model MLP tidak ditemukan. Pastikan file .pkl sudah di-load.")
+            status_text.text("✅ Estimasi GMPE Selesai (Fitur Hybrid tidak lengkap)")
+            progress_bar.progress(100)
                     
-        # ============================================
-        # STEP 5: KALKULASI SELESAI
-        # ============================================
-        # data_final = pd.concat(temp_results, ignore_index=True)
-        
+
+        # Kalkulasi Selesai
         status_text.text("✅ Kalkulasi selesai!")
-        progress_bar.progress(100)  # Update progress ke 100%
+        progress_bar.progress(100)
         
-        # Simpan hasil ke session state untuk ditampilkan
-        # SIMPAN HASIL KE SESSION STATE
-        # Gunakan data_final (yang sudah ada GMPE & MLP untuk 5 tipe tanah)
+
         st.session_state['hasil_estimasi'] = data_final
         st.session_state['is_gmpe_done'] = True
-        st.session_state['is_hybrid_done'] = True
+
+        if 'PGA_MLP' in data_final.columns:
+            st.session_state['is_hybrid_done'] = True
+        else:
+            st.session_state['is_hybrid_done'] = False
         
-        # Delay sebentar untuk animasi selesai
-        import time
+        
         time.sleep(0.5)
         
-        # Clear progress bar dan status text
         progress_bar.empty()
         status_text.empty()
         
-        # Success message
-        st.success("🎉 Estimasi PGA berhasil!")
-        
-        # Reload halaman untuk tampilkan hasil
+        st.success("Estimasi PGA berhasil!")
         st.rerun()
-    
-    # ============================================
-    # SECTION 6: TAMPILKAN HASIL ESTIMASI
-    # Bagian ini hanya tampil SETELAH estimasi selesai
-    # ============================================
-    
-    # ============================================
-    # SECTION 6: TAMPILKAN HASIL ESTIMASI
-    # ============================================
+
+        if st.session_state.get('is_gmpe_done'):
+            st.subheader("📊 Visualisasi Hasil Estimasi")
+            df_hasil = st.session_state['hasil_estimasi']
+            
+            st.dataframe(df_hasil.head())
+            
+            if st.session_state.get('is_hybrid_done'):
+                st.info("💡 Data ini mencakup perbandingan metode Empiris (GMPE) dan Neural Network (MLP).")
+
+   
+    # Hasil Estimasi
     if 'hasil_estimasi' in st.session_state:
         st.markdown("---")
         st.header("📊 Hasil Analisis Estimasi PGA")
         
         # Load hasil dari session state
         df_result = st.session_state['hasil_estimasi']
-        # Cek apakah kolom ada, jika tidak ada (karena salah nama), beri peringatan yang jelas
+        
+        # Validasi Kolom
         if 'PGA_GMPE' not in df_result.columns:
-            # Coba cari apakah dia bernama 'PGA_g' lalu rename otomatis
             if 'PGA_g' in df_result.columns:
                 df_result = df_result.rename(columns={'PGA_g': 'PGA_GMPE'})
             else:
-                st.error("Kolom 'PGA_GMPE' tidak ditemukan dalam data. Periksa penamaan di Step 5.")
-                st.stop() # Hentikan proses agar tidak error baris bawahnya
+                st.error("Kolom 'PGA_GMPE' tidak ditemukan.")
+                st.stop()
 
         is_gmpe_done = st.session_state.get('is_gmpe_done', False)
         is_hybrid_done = st.session_state.get('is_hybrid_done', False)
 
-        # ============================================
-        # SUB-SECTION 6A: METRICS SUMMARY
-        # ============================================
+
         st.markdown("### 📈 Ringkasan Rata-Rata PGA")
         col_m1, col_m2, col_m3 = st.columns(3)
         
-        # Ambil rata-rata global untuk perbandingan cepat
         with col_m1:
             st.metric("PGA GMPE (Mean)", f"{df_result['PGA_GMPE'].mean():.4f} g")
         
         with col_m2:
-            if 'PGA_MLP' in df_result.columns:
+            if is_hybrid_done:
+                diff_mean = df_result['PGA_MLP'].mean() - df_result['PGA_GMPE'].mean()
                 st.metric("PGA MLP (Mean)", f"{df_result['PGA_MLP'].mean():.4f} g", 
-                          delta=f"{df_result['PGA_MLP'].mean() - df_result['PGA_GMPE'].mean():.4f}",
-                          delta_color="off")
+                        delta=f"{diff_mean:.4f}", delta_color="off")
         
         with col_m3:
             st.metric("Total Data Skenario", f"{len(df_result)}")
 
-        # ============================================
-        # SUB-SECTION 6B: FILTERING VIEW
-        # ============================================
+
+        # Filter Hasil Tabel
         st.markdown("### 📋 Dataset Hasil Estimasi")
         
-        # Buat kolom filter di dalam satu baris
         f_col1, f_col2 = st.columns(2)
-        
         with f_col1:
-            # Filter berdasarkan Tipe Tanah
             soil_options = df_result['Tipe_Tanah'].unique().tolist()
             selected_soil = st.multiselect("Pilih Tipe Tanah:", soil_options, default=soil_options)
-            
         with f_col2:
-            # Filter berdasarkan Magnitude (Slider)
-            mag_min = float(df_result[mapped_columns['magnitude']].min())
-            mag_max = float(df_result[mapped_columns['magnitude']].max())
+            mag_col = mapped_columns['magnitude']
+            mag_min, mag_max = float(df_result[mag_col].min()), float(df_result[mag_col].max())
             selected_mag = st.slider("Filter Rentang Magnitude:", mag_min, mag_max, (mag_min, mag_max))
 
-        # Terapkan Filter
+        # Terapkan Filter Berdasarkan tanah
         df_filtered = df_result[
             (df_result['Tipe_Tanah'].isin(selected_soil)) &
-            (df_result[mapped_columns['magnitude']].between(selected_mag[0], selected_mag[1]))
+            (df_result[mag_col].between(selected_mag[0], selected_mag[1]))
         ].copy()
 
-        # ============================================
-        # SUB-SECTION 6C: TABEL HASIL
-        # ============================================
-        
-        # Tentukan kolom yang akan ditampilkan agar tidak terlalu lebar
-        display_cols = ['Tipe_Tanah', mapped_columns['magnitude'], mapped_columns['depth'], 'RJB_km']
-        
-        if is_gmpe_done:
-            display_cols.append('PGA_GMPE')
-        if is_hybrid_done:
-            display_cols.append('PGA_MLP')
-            
-        # Penamaan ulang kolom agar lebih cantik di aplikasi
-        rename_map = {
-            mapped_columns['magnitude']: 'Magnitude',
-            mapped_columns['depth']: 'Kedalaman (km)',
-            'RJB_km': 'Jarak JB (km)',
-            'PGA_GMPE': 'PGA GMPE (g)',
-            'PGA_MLP': 'PGA Neural Network (g)'
-        }
-        
-        # Tampilkan DataFrame
-        st.dataframe(
-            df_filtered[display_cols].rename(columns=rename_map),
-            use_container_width=True,
-            height=450
-        )
-        
-        st.caption(f"Menampilkan {len(df_filtered)} skenario dari total data.")
 
-        # Tombol Download untuk Keperluan Skripsi
-        csv_data = df_filtered.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="📥 Download Hasil Estimasi (CSV)",
-            data=csv_data,
-            file_name='hasil_estimasi_pga_hybrid.csv',
-            mime='text/csv',
-            use_container_width=True
-        )
+        display_cols = ['Tipe_Tanah', mag_col, mapped_columns['depth'], 'RJB_km', 'PGA_GMPE']
+        if is_hybrid_done: display_cols.append('PGA_MLP')
         
-        # ============================================
-        # SUB-SECTION 6C: VISUALISASI
-        # Grafik interaktif menggunakan Plotly
-        # ============================================
+        rename_map = {mag_col: 'Magnitude', mapped_columns['depth']: 'Kedalaman (km)', 
+                    'RJB_km': 'Jarak JB (km)', 'PGA_GMPE': 'PGA GMPE (g)', 'PGA_MLP': 'PGA MLP (g)'}
         
-        # ============================================
-        # SUB-SECTION 6C: VISUALISASI HASIL
-        # ============================================
+        st.dataframe(df_filtered[display_cols].rename(columns=rename_map), use_container_width=True, height=400)
+        st.caption(f"Menampilkan {len(df_filtered)} skenario.")
+
+
+        # RMSE dan R^2 data User
+        if is_hybrid_done:
+            st.markdown("---")
+            st.subheader("🎯 Validasi Akurasi pada Data Anda")
+            st.write("Statistik ini mengukur seberapa presisi Neural Network dalam mereplikasi model GMPE pada dataset ini:")
+
+            from sklearn.metrics import mean_squared_error, r2_score
+            
+            y_true = df_filtered['PGA_GMPE']
+            y_pred = df_filtered['PGA_MLP']
+            
+            user_rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+            user_r2 = r2_score(y_true, y_pred)
+
+            u_col1, u_col2, u_col3 = st.columns(3)
+            with u_col1:
+                st.metric("RMSE (Data Anda)", f"{user_rmse:.5f}")
+            with u_col2:
+                st.metric("R² Score (Data Anda)", f"{user_r2:.5f}")
+            with u_col3:
+                # Menghitung rata-rata koreksi yang diberikan variabel tambahan
+                avg_corr = (y_pred - y_true).abs().mean()
+                st.metric("Avg. Correction", f"{avg_corr:.5f} g")
+
+            st.info("ℹ️ **Keterangan:** Nilai RMSE dan R² di atas menunjukkan tingkat keselarasan model MLP terhadap standar GMPE. "
+                    "Adanya selisih (Correction) menunjukkan peran variabel tambahan (NST, GAP, dll) dalam menyesuaikan nilai estimasi.")
+        
+       
+        # Visualisasi
         st.markdown("---")
         st.markdown("### 📊 Visualisasi Perbandingan Metode")
-        
-        # Buat Main Tabs
-        tab_gmpe, tab_ml = st.tabs(["🏛️ Metode GMPE (Klasik)", "🤖 Metode Hybrid (Neural Network)"])
 
-        # === TAB 1: VISUALISASI GMPE ===
+        # Buat Main Tabs
+        tab_gmpe, tab_ml = st.tabs(["Metode GMPE ", "Metode Hybrid (GMPE + Neural Network)"])
+
+        # Visualisasi GMPE
         with tab_gmpe:
             st.subheader("Analisis Klasik Boore-Atkinson (2008)")
             
-            c1, c2 = st.columns([1, 1])
-            with c1:
-                # 1. Histogram Distribusi PGA GMPE
-                fig_hist = px.histogram(df_result, x='PGA_GMPE', 
-                                       title="Distribusi Nilai PGA (GMPE)",
-                                       color_discrete_sequence=['#3366CC'],
-                                       labels={'PGA_GMPE': 'PGA (g)'})
-                st.plotly_chart(fig_hist, use_container_width=True)
-            
-            with c2:
-                # 2. Scatter Magnitude vs PGA GMPE
-                fig_scat = px.scatter(df_result, x=mapped_columns['magnitude'], y='PGA_GMPE',
-                                     color='Tipe_Tanah', title="Magnitude vs PGA GMPE",
-                                     labels={'PGA_GMPE': 'PGA (g)'})
-                st.plotly_chart(fig_scat, use_container_width=True)
-
-            # 3. Peta Sebaran PGA Indonesia
+            # Peta Sebaran PGA GMPE
             st.markdown("#### 🗺️ Peta Distribusi Spasial PGA (GMPE)")
-            fig_map = px.scatter_mapbox(df_result, 
-                                       lat=mapped_columns['latitude'], 
-                                       lon=mapped_columns['longitude'],
-                                       color='PGA_GMPE', size='PGA_GMPE',
-                                       color_continuous_scale='Reds',
-                                       hover_name='Tipe_Tanah',
-                                       zoom=4, center={"lat": -2.5, "lon": 118.0}, # Center Indonesia
-                                       mapbox_style="open-street-map",
-                                       title="Sebaran Intensitas PGA di Wilayah Target")
-            fig_map.update_layout(height=600)
-            st.plotly_chart(fig_map, use_container_width=True)
+            fig_map_gmpe = px.scatter_mapbox(df_result, 
+                                        lat=mapped_columns['latitude'], 
+                                        lon=mapped_columns['longitude'],
+                                        color='PGA_GMPE', size='PGA_GMPE',
+                                        color_continuous_scale='Reds',
+                                        hover_data=[mapped_columns['magnitude'], 'RJB_km', 'Tipe_Tanah'],
+                                        zoom=4, center={"lat": -2.5, "lon": 118.0},
+                                        mapbox_style="open-street-map",
+                                        title="Intensitas PGA (GMPE) di Wilayah Target")
+            st.plotly_chart(fig_map_gmpe, use_container_width=True)
 
-        # === TAB 2: VISUALISASI HYBRID (MLP) ===
+            # Visualisasi Pola (Mag, RJB, Tipe Tanah)
+            st.markdown("#### 📈 Analisis Pola Parameter GMPE")
+            c1, c2 = st.columns(2)
+            with c1:
+                # Magnitude vs PGA
+                fig_mag = px.scatter(df_result, x=mapped_columns['magnitude'], y='PGA_GMPE',
+                                color='Tipe_Tanah', title="Magnitude vs PGA GMPE")
+                st.plotly_chart(fig_mag, use_container_width=True)
+            with c2:
+                # Jarak (RJB) vs PGA
+                fig_rjb = px.scatter(df_result, x='RJB_km', y='PGA_GMPE',
+                                color='Tipe_Tanah', title="Jarak (RJB) vs PGA GMPE")
+                st.plotly_chart(fig_rjb, use_container_width=True)
+
+        # Visualisasi Hybrid
         with tab_ml:
             st.subheader("Analisis Inteligensi Buatan (Neural Network)")
             
-            # 1. Feature Importance (Penting untuk Skripsi)
-            # Karena MLPRegressor tidak punya feature_importances_ secara native, 
-            # kita gunakan bobot absolut dari layer pertama sebagai representasi
-            st.markdown("#### 🔑 Feature Importance (Kontribusi Variabel)")
+            # Peta Sebaran PGA ML
+            st.markdown("#### 🗺️ Peta Distribusi Spasial PGA (Neural Network)")
+            fig_map_mlp = px.scatter_mapbox(df_result, 
+                                        lat=mapped_columns['latitude'], 
+                                        lon=mapped_columns['longitude'],
+                                        color='PGA_MLP', size='PGA_MLP',
+                                        color_continuous_scale='Bluered', 
+                                        hover_data=[mapped_columns['magnitude'], 'RJB_km', 'Tipe_Tanah'],
+                                        zoom=4, center={"lat": -2.5, "lon": 118.0},
+                                        mapbox_style="open-street-map",
+                                        title="Intensitas PGA (MLP) di Wilayah Target")
+            st.plotly_chart(fig_map_mlp, use_container_width=True)
+
+            # Visualisasi RMSE & R^2
+            st.markdown("#### Metrik Akurasi Model terhadap GMPE")
+            y_true = df_result['PGA_GMPE']
+            y_pred = df_result['PGA_MLP']
+            u_rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+            u_r2 = r2_score(y_true, y_pred)
+
+            col_acc1, col_acc2 = st.columns(2)
+            with col_acc1:
+                fig_r2 = go.Figure(go.Indicator(
+                    mode = "gauge+number", value = u_r2,
+                    title = {'text': "R² Score (Kemiripan)"},
+                    gauge = {'axis': {'range': [0, 1]}, 'bar': {'color': "darkblue"}}))
+                st.plotly_chart(fig_r2, use_container_width=True)
+            with col_acc2:
+                fig_rmse = go.Figure(go.Indicator(
+                    mode = "gauge+number", value = u_rmse,
+                    title = {'text': "RMSE (Error)"},
+                    gauge = {'axis': {'range': [0, 0.2]}, 'bar': {'color': "darkred"}}))
+                st.plotly_chart(fig_rmse, use_container_width=True)
+
+            # Feature Importance
+            st.markdown("#### Kontribusi Variabel terhadap Prediksi")
             try:
-                # Mengambil koefisien dari layer pertama model MLP
                 weights = np.abs(model_mlp.coefs_[0]).sum(axis=1)
-                # Nama fitur sesuai urutan yang kita buat tadi
+
                 feature_names = [
                     'Latitude', 'Longitude', 'Depth', 'Nst', 'Gap', 'RMS', 'MagNst',
                     'Soil_SA', 'Soil_SB', 'Soil_SC', 'Soil_SD', 'Soil_SE',
                     'F_Miss_Gap', 'F_Miss_RMS', 'F_Miss_MagNst', 'F_Miss_DErr', 'F_Miss_Nst',
                     'F_Out_Gap', 'F_Out_RMS', 'F_Out_MagNst', 'F_Out_Dep', 'F_Out_DErr'
                 ]
+                df_imp = pd.DataFrame({'Fitur': feature_names, 'Importance': weights}).sort_values(by='Importance', ascending=True)
                 
-                df_imp = pd.DataFrame({'Fitur': feature_names, 'Importance': weights})
-                df_imp = df_imp.sort_values(by='Importance', ascending=True).tail(10) # Ambil top 10
-                
-                fig_imp = px.bar(df_imp, x='Importance', y='Fitur', orientation='h',
-                                title="10 Variabel Paling Berpengaruh pada Prediksi MLP",
+                fig_imp = px.bar(df_imp.tail(12), x='Importance', y='Fitur', orientation='h',
+                                title="Top 12 Fitur Paling Berpengaruh",
                                 color='Importance', color_continuous_scale='Viridis')
                 st.plotly_chart(fig_imp, use_container_width=True)
-                st.info("💡 Grafik ini menunjukkan variabel mana yang paling 'diperhatikan' oleh Neural Network dalam menentukan nilai PGA.")
-            except:
-                st.warning("Gagal memuat Feature Importance. Pastikan model MLP sudah terload sempurna.")
+            except Exception as e:
+                st.warning(f"Feature Importance tidak dapat dimuat: {e}")
 
-            # # 2. Scatter Perbandingan (Sangat penting untuk validasi)
-            # st.markdown("#### 🔄 Perbandingan Langsung: GMPE vs MLP")
-            # fig_comp = px.scatter(df_result, x='PGA_GMPE', y='PGA_MLP', 
-            #                      color='Tipe_Tanah', opacity=0.6,
-            #                      trendline="ols", # Menambahkan garis tren linear
-            #                      title="Korelasi Prediksi: Metode Klasik vs Hybrid")
-            # # Garis diagonal 45 derajat (Ideal)
-            # max_val = max(df_result['PGA_GMPE'].max(), df_result['PGA_MLP'].max())
-            # fig_comp.add_shape(type="line", x0=0, y0=0, x1=max_val, y1=max_val,
-            #                   line=dict(color="Red", dash="dash"))
-            # st.plotly_chart(fig_comp, use_container_width=True)
-        
-        # ============================================
-        # SUB-SECTION 6D: EXPORT HASIL
-        # Download hasil dalam format CSV atau Excel
-        # ============================================
-        
-        # ============================================
-        # SUB-SECTION 6D: EXPORT HASIL
-        # ============================================
+            # Notes
+            st.warning("""
+            ⚠️ **Catatan Penting:** Hasil estimasi menggunakan metode **Neural Network (MLP)** ini dikembangkan sebagai model pendukung untuk mengoreksi atau memperhalus hasil dari metode empiris.  
+            Metode ini **tidak ditujukan untuk menggantikan standar peraturan bangunan tahan gempa** (seperti SNI 1726) yang berlaku, melainkan sebagai instrumen analisis tambahan untuk melihat pengaruh kualitas data seismik terhadap nilai percepatan tanah.
+            """)
+
+        # Export Hasil
         st.markdown("---")
         st.markdown("### 💾 Export Hasil")
-        
-        # Gunakan df_filtered (dari Section 6B) agar yang di-download 
-        # sesuai dengan apa yang difilter user di layar.
-        # Atau gunakan df_result jika ingin men-download SEMUA data.
-        
-        # Tambahkan import ini di paling atas script: from datetime import datetime
-        from datetime import datetime 
-        from io import BytesIO
+
+        st.info(f"📄 Data yang akan diunduh mencakup {len(df_filtered)} baris hasil estimasi berdasarkan filter yang Anda terapkan.")
 
         col_exp1, col_exp2 = st.columns(2)
-        
-        # === DOWNLOAD CSV ===
+
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+        # Download CSV
         with col_exp1:
-            # Kita gunakan df_filtered yang sudah kita buat di sub-section sebelumnya
             csv = df_filtered.to_csv(index=False).encode('utf-8')
-            
             st.download_button(
                 label="📥 Download Hasil (CSV)",
                 data=csv,
-                file_name=f"pga_hybrid_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                file_name=f"pga_hybrid_export_{timestamp}.csv",
                 mime="text/csv",
                 use_container_width=True
             )
-        
-        # === DOWNLOAD EXCEL ===
+
+        # Download Excel
         with col_exp2:
             output = BytesIO()
-            # Gunakan engine openpyxl (pastikan sudah terinstall: pip install openpyxl)
-            with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                df_filtered.to_excel(writer, index=False, sheet_name='Hasil Estimasi PGA')
-            
-            excel_data = output.getvalue()
-            
-            st.download_button(
-                label="📥 Download Hasil (Excel)",
-                data=excel_data,
-                file_name=f"pga_hybrid_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True
-            )
-        
+            try:
+                with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                    df_filtered.to_excel(writer, index=False, sheet_name='Hasil Estimasi PGA')
+                
+                excel_data = output.getvalue()
+                st.download_button(
+                    label="📥 Download Hasil (Excel)",
+                    data=excel_data,
+                    file_name=f"pga_hybrid_export_{timestamp}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True
+                )
+            except Exception as e:
+                st.error(f"Gagal membuat file Excel. Pastikan library 'openpyxl' terinstall. Error: {e}")
+
         st.markdown("<br>", unsafe_allow_html=True)
-        
-        # ============================================
-        # BUTTON RESET / ESTIMASI ULANG
-        # ============================================
-        # Tambahkan desain yang agak berbeda (misal: secondary) agar tidak tertukar dengan tombol download
+
+        # Button Reset
         if st.button("🔄 Estimasi Ulang dengan Parameter Berbeda", use_container_width=True, type="secondary"):
-            # Menghapus semua state agar kembali ke kondisi awal upload data
             keys_to_delete = ['hasil_estimasi', 'is_gmpe_done', 'is_hybrid_done']
+            
             for key in keys_to_delete:
                 if key in st.session_state:
                     del st.session_state[key]
-            
-            # Reload halaman
             st.rerun()
-
-# ============================================
-# END OF FILE
-# ============================================
