@@ -806,9 +806,6 @@ def show():
             # Notes
             st.warning("""
             ⚠️ **Catatan Penting:** Hasil estimasi menggunakan metode **Neural Network (MLP)** ini dikembangkan sebagai model pendukung untuk mengoreksi atau memperhalus hasil dari metode empiris. 
-                       
-                       Metode ini **tidak ditujukan untuk menggantikan standar peraturan bangunan tahan gempa** (seperti SNI 1726) yang berlaku, 
-                       melainkan sebagai instrumen analisis tambahan untuk melihat pengaruh kualitas data seismik terhadap nilai percepatan tanah.
             """)
 
         # Export Hasil
