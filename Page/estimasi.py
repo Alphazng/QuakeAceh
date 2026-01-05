@@ -402,7 +402,7 @@ def show():
     st.markdown("### Jalankan Estimasi")
     
     # Button untuk mulai kalkulasi
-    if st.button("▶️ Mulai Estimasi PGA", type="primary", use_container_width=True):
+    if st.button("Mulai Estimasi PGA", type="primary", use_container_width=True):
 
         if target_latitude == 0.0:
             st.error("Mohon masukkan koordinat lokasi target Anda.")
@@ -412,7 +412,7 @@ def show():
         status_text = st.empty()
         
         # Mencari Jarak RJB
-        status_text.text("📏 Menghitung jarak episenter...")
+        status_text.text("Menghitung jarak episenter...")
         progress_bar.progress(10)  
         df_calc = df.copy()
 
@@ -429,7 +429,7 @@ def show():
         progress_bar.progress(20)  
         
         # Filtering Data VS30, depth dan mag
-        status_text.text("🧹 Melakukan filtering data...")
+        status_text.text("Melakukan filtering data...")
 
         condition = (df_calc[mag_col] >= 5.0) & (df_calc[dep_col] > 0) & (df_calc['RJB_km'] <= 200)
         
@@ -498,10 +498,9 @@ def show():
         # Estimasi GMPE + ML
 
         if is_hybrid_ready and ('model_mlp' in globals() or 'model_mlp' in locals()):
-            status_text.text("🤖 Menjalankan model Machine Learning...")
             
             # Kalkulasi Menggunakan neural Network
-            status_text.text("🤖 Menjalankan model Machine Learning (MLP)...")
+            status_text.text("Menjalankan model Machine Learning (MLP)...")
 
             nst_col = mapped_columns.get('nst')
             gap_col = mapped_columns.get('gap')
@@ -603,7 +602,7 @@ def show():
         st.rerun()
 
         if st.session_state.get('is_gmpe_done'):
-            st.subheader("📊 Visualisasi Hasil Estimasi")
+            st.subheader("Visualisasi Hasil Estimasi")
             df_hasil = st.session_state['hasil_estimasi']
             
             st.dataframe(df_hasil.head())
@@ -615,7 +614,7 @@ def show():
     # Hasil Estimasi
     if 'hasil_estimasi' in st.session_state:
         st.markdown("---")
-        st.header("📊 Hasil Analisis Estimasi PGA")
+        st.header("Hasil Analisis Estimasi PGA")
         
         # Load hasil dari session state
         df_result = st.session_state['hasil_estimasi']
@@ -632,7 +631,7 @@ def show():
         is_hybrid_done = st.session_state.get('is_hybrid_done', False)
 
 
-        st.markdown("### 📈 Ringkasan Rata-Rata PGA")
+        st.markdown("### Ringkasan Rata-Rata PGA")
         col_m1, col_m2, col_m3 = st.columns(3)
         
         with col_m1:
@@ -649,7 +648,7 @@ def show():
 
 
         # Filter Hasil Tabel
-        st.markdown("### 📋 Dataset Hasil Estimasi")
+        st.markdown("### Dataset Hasil Estimasi")
         
         f_col1, f_col2 = st.columns(2)
         with f_col1:
@@ -680,7 +679,7 @@ def show():
         # RMSE dan R^2 data User
         if is_hybrid_done:
             st.markdown("---")
-            st.subheader("🎯 Validasi Akurasi pada Data Anda")
+            st.subheader("Validasi Akurasi pada Data Anda")
             st.write("Statistik ini mengukur seberapa presisi Neural Network dalam mereplikasi model GMPE pada dataset ini:")
 
             from sklearn.metrics import mean_squared_error, mean_absolute_error
@@ -710,7 +709,7 @@ def show():
        
         # Visualisasi
         st.markdown("---")
-        st.markdown("### 📊 Visualisasi Perbandingan Metode")
+        st.markdown("### Visualisasi Perbandingan Metode")
 
         # Buat Main Tabs
         tab_gmpe, tab_ml = st.tabs(["Metode GMPE ", "Metode Hybrid (GMPE + Neural Network)"])
@@ -720,7 +719,7 @@ def show():
             st.subheader("Analisis Klasik Boore-Atkinson (2008)")
             
             # Peta Sebaran PGA GMPE
-            st.markdown("#### 🗺️ Peta Distribusi Spasial PGA (GMPE)")
+            st.markdown("#### Peta Distribusi Spasial PGA (GMPE)")
             fig_map_gmpe = px.scatter_mapbox(df_result, 
                                         lat=mapped_columns['latitude'], 
                                         lon=mapped_columns['longitude'],
@@ -733,7 +732,7 @@ def show():
             st.plotly_chart(fig_map_gmpe, use_container_width=True)
 
             # Visualisasi Pola (Mag, RJB, Tipe Tanah)
-            st.markdown("#### 📈 Analisis Pola Parameter GMPE")
+            st.markdown("#### Analisis Pola Parameter GMPE")
             c1, c2 = st.columns(2)
             with c1:
                 # Magnitude vs PGA
@@ -751,7 +750,7 @@ def show():
             st.subheader("Analisis Inteligensi Buatan (Neural Network)")
             
             # Peta Sebaran PGA ML
-            st.markdown("#### 🗺️ Peta Distribusi Spasial PGA (Neural Network)")
+            st.markdown("#### Peta Distribusi Spasial PGA (Neural Network)")
             fig_map_mlp = px.scatter_mapbox(df_result, 
                                         lat=mapped_columns['latitude'], 
                                         lon=mapped_columns['longitude'],
@@ -812,9 +811,9 @@ def show():
 
         # Export Hasil
         st.markdown("---")
-        st.markdown("### 💾 Export Hasil")
+        st.markdown("### Export Hasil")
 
-        st.info(f"📄 Data yang akan diunduh mencakup {len(df_filtered)} baris hasil estimasi berdasarkan filter yang Anda terapkan.")
+        st.info(f"Data yang akan diunduh mencakup {len(df_filtered)} baris hasil estimasi berdasarkan filter yang Anda terapkan.")
 
         col_exp1, col_exp2 = st.columns(2)
 
@@ -824,7 +823,7 @@ def show():
         with col_exp1:
             csv = df_filtered.to_csv(index=False).encode('utf-8')
             st.download_button(
-                label="📥 Download Hasil (CSV)",
+                label="Download Hasil (CSV)",
                 data=csv,
                 file_name=f"pga_hybrid_export_{timestamp}.csv",
                 mime="text/csv",
@@ -840,7 +839,7 @@ def show():
                 
                 excel_data = output.getvalue()
                 st.download_button(
-                    label="📥 Download Hasil (Excel)",
+                    label="Download Hasil (Excel)",
                     data=excel_data,
                     file_name=f"pga_hybrid_export_{timestamp}.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -852,7 +851,7 @@ def show():
         st.markdown("<br>", unsafe_allow_html=True)
 
         # Button Reset
-        if st.button("🔄 Estimasi Ulang dengan Parameter Berbeda", use_container_width=True, type="secondary"):
+        if st.button("Estimasi Ulang dengan Parameter Berbeda", use_container_width=True, type="secondary"):
             keys_to_delete = ['hasil_estimasi', 'is_gmpe_done', 'is_hybrid_done']
             
             for key in keys_to_delete:
