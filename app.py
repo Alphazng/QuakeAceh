@@ -43,6 +43,14 @@ with st.sidebar:
         st.session_state.page = 'Beranda'      
         st.rerun()
     
+    if st.button(
+        "📖 Panduan",                          
+        use_container_width=True, 
+        type="primary" if st.session_state.page == 'Panduan' else "secondary"
+    ):
+        st.session_state.page = 'Panduan'      
+        st.rerun()
+    
     # MENU 2: DATA
     if st.button(
         "📊 Data",                             
