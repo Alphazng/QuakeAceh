@@ -72,7 +72,11 @@ with st.sidebar:
 
 if st.session_state.page == 'Beranda':         
     from Page import beranda           
-    beranda.show()                              
+    beranda.show()
+
+elif st.session_state.page == 'Panduan':         
+    from Page import panduan           
+    panduan.show()                              
 
 elif st.session_state.page == 'Data':
     from Page import data
