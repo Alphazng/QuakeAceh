@@ -26,9 +26,9 @@ with st.sidebar:
     # LOGO (EMOJI) & TITLE 
     
     # Menggunakan Markdown standar agar warna teks adaptif
-    st.markdown("<h1 style='text-align: center;'>🌍</h1>", unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align: center; margin-top: -20px;'>QuakeAceh</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; margin-top: -10px;'>Sistem PGA</p>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;font-size: 4rem; margin-bottom: 0;'>🌍</h1>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; margin-top: -10px; font-size: 2rem; font-weight: bold;'>QuakeAceh</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; margin-top: -10px; font-size: 1.1rem;'>Sistem PGA</p>", unsafe_allow_html=True)
        
     st.markdown("---")
     

@@ -23,12 +23,11 @@ def show():
     
     st.markdown("### Wilayah Studi")  
     
-    #  Interactive Map
+   
+    #  Interactive Map - ZOOM KE ACEH
     m = folium.Map(
-        location=[-0.7893, 113.9213],    # Koordinat center [lat, lon]
-        zoom_start=5,                     # Zoom level (1-20)
-
-
+        location=[5.5483, 95.3238],       # Koordinat center Aceh [lat, lon]
+        zoom_start=8,                     # Zoom level lebih dekat ke Aceh
     )
     
     # Marker Untuk Aceh
