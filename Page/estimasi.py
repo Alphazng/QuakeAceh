@@ -611,8 +611,8 @@ def show():
             if st.session_state.get('is_hybrid_done'):
                 st.info("💡 Data ini mencakup perbandingan metode Empiris (GMPE) dan Neural Network (MLP).")
 
-   
-    # Hasil Estimasi
+
+        # Hasil Estimasi
     if 'hasil_estimasi' in st.session_state:
         st.markdown("---")
         st.header("Hasil Analisis Estimasi PGA")
@@ -628,27 +628,21 @@ def show():
                 st.error("Kolom 'PGA_GMPE' tidak ditemukan.")
                 st.stop()
 
-        is_gmpe_done = st.session_state.get('is_gmpe_done', False)
         is_hybrid_done = st.session_state.get('is_hybrid_done', False)
-        # --- BAGIAN RINGKASAN PGA MAKSIMUM ---
+        
+        # --- BAGIAN RINGKASAN PGA MAKSIMUM (PERBAIKAN ERROR) ---
         st.markdown("### 🚨 Skenario PGA Maksimum")
         
-        # Hitung nilai maksimum
+        # Hitung nilai maksimum global
         val_max_gmpe = df_result['PGA_GMPE'].max()
         
-        with col_m1:
-            st.metric("PGA GMPE Tertinggi", f"{val_max_gmpe:.4f} g")
-        # Buat kolom tampilan
-        col_m1, col_m2 = st.columns(2)
+        # Buat kolom tampilan dengan nama unik (m_col) agar tidak bentrok
+        m_col1, m_col2 = st.columns(2)
 
-
-        st.markdown("### Ringkasan Rata-Rata PGA")
-        col_m1, col_m2, col_m3 = st.columns(3)
-        
-        with col_m1:
+        with m_col1:
             st.metric("PGA GMPE Tertinggi", f"{val_max_gmpe:.4f} g")
     
-        with col_m2:
+        with m_col2:
             if is_hybrid_done:
                 val_max_mlp = df_result['PGA_MLP'].max()
                 
@@ -659,15 +653,13 @@ def show():
                     label="PGA MLP Tertinggi", 
                     value=f"{val_max_mlp:.4f} g", 
                     delta=f"{diff_max:.4f} g",
-                    delta_color="normal" # Hijau jika naik, merah jika turun
+                    delta_color="normal" 
                 )
             else:
                 st.info("💡 Jalankan Estimasi MLP untuk melihat perbandingan nilai maksimum.")
+
         # --- FILTER DATASET ---
-        st.markdown("### Dataset Hasil Estimasi")
-
-
-        # Filter Hasil Tabel
+        st.markdown("---")
         st.markdown("### Dataset Hasil Estimasi")
         
         f_col1, f_col2 = st.columns(2)
@@ -679,21 +671,26 @@ def show():
             mag_min, mag_max = float(df_result[mag_col].min()), float(df_result[mag_col].max())
             selected_mag = st.slider("Filter Rentang Magnitude:", mag_min, mag_max, (mag_min, mag_max))
 
-        # Terapkan Filter Berdasarkan tanah
+        # Terapkan Filter
         df_filtered = df_result[
             (df_result['Tipe_Tanah'].isin(selected_soil)) &
             (df_result[mag_col].between(selected_mag[0], selected_mag[1]))
         ].copy()
 
-
+        # Kolom yang ditampilkan di tabel
         display_cols = ['Tipe_Tanah', mag_col, mapped_columns['depth'], 'RJB_km', 'PGA_GMPE']
         if is_hybrid_done: display_cols.append('PGA_MLP')
         
-        rename_map = {mag_col: 'Magnitude', mapped_columns['depth']: 'Kedalaman (km)', 
-                    'RJB_km': 'Jarak JB (km)', 'PGA_GMPE': 'PGA GMPE (g)', 'PGA_MLP': 'PGA MLP (g)'}
+        rename_map = {
+            mag_col: 'Magnitude', 
+            mapped_columns['depth']: 'Kedalaman (km)', 
+            'RJB_km': 'Jarak JB (km)', 
+            'PGA_GMPE': 'PGA GMPE (g)', 
+            'PGA_MLP': 'PGA MLP (g)'
+        }
         
         st.dataframe(df_filtered[display_cols].rename(columns=rename_map), use_container_width=True, height=400)
-        st.caption(f"Menampilkan {len(df_filtered)} skenario.")
+        st.caption(f"Menampilkan {len(df_filtered)} skenario hasil filter.")
 
 
         # RMSE dan MAE data User
