@@ -8,7 +8,8 @@ from scipy import stats
 import joblib
 import time
 from io import BytesIO
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error, mean_absolute_error
+
 
 def show():
    
@@ -629,22 +630,41 @@ def show():
 
         is_gmpe_done = st.session_state.get('is_gmpe_done', False)
         is_hybrid_done = st.session_state.get('is_hybrid_done', False)
+        # --- BAGIAN RINGKASAN PGA MAKSIMUM ---
+        st.markdown("### 🚨 Skenario PGA Maksimum")
+        
+        # Hitung nilai maksimum
+        val_max_gmpe = df_result['PGA_GMPE'].max()
+        
+        with col_m1:
+            st.metric("PGA GMPE Tertinggi", f"{val_max_gmpe:.4f} g")
+        # Buat kolom tampilan
+        col_m1, col_m2 = st.columns(2)
 
 
         st.markdown("### Ringkasan Rata-Rata PGA")
         col_m1, col_m2, col_m3 = st.columns(3)
         
         with col_m1:
-            st.metric("PGA GMPE (Mean)", f"{df_result['PGA_GMPE'].mean():.4f} g")
-        
+            st.metric("PGA GMPE Tertinggi", f"{val_max_gmpe:.4f} g")
+    
         with col_m2:
             if is_hybrid_done:
-                diff_mean = df_result['PGA_MLP'].mean() - df_result['PGA_GMPE'].mean()
-                st.metric("PGA MLP (Mean)", f"{df_result['PGA_MLP'].mean():.4f} g", 
-                        delta=f"{diff_mean:.4f}", delta_color="off")
-        
-        with col_m3:
-            st.metric("Total Data Skenario", f"{len(df_result)}")
+                val_max_mlp = df_result['PGA_MLP'].max()
+                
+                # Menghitung selisih (delta) antara MLP dan GMPE
+                diff_max = val_max_mlp - val_max_gmpe
+                
+                st.metric(
+                    label="PGA MLP Tertinggi", 
+                    value=f"{val_max_mlp:.4f} g", 
+                    delta=f"{diff_max:.4f} g",
+                    delta_color="normal" # Hijau jika naik, merah jika turun
+                )
+            else:
+                st.info("💡 Jalankan Estimasi MLP untuk melihat perbandingan nilai maksimum.")
+        # --- FILTER DATASET ---
+        st.markdown("### Dataset Hasil Estimasi")
 
 
         # Filter Hasil Tabel
@@ -676,13 +696,13 @@ def show():
         st.caption(f"Menampilkan {len(df_filtered)} skenario.")
 
 
-        # RMSE dan R^2 data User
+        # RMSE dan MAE data User
         if is_hybrid_done:
             st.markdown("---")
-            st.subheader("Validasi Akurasi pada Data Anda")
-            st.write("Statistik ini mengukur seberapa presisi Neural Network dalam mereplikasi model GMPE pada dataset ini:")
+            st.subheader("Validasi Akurasi Untuk GMPE + Neural Network (MLP)")
+            st.write("Statistik ini mengukur seberapa presisi Neural Network dan GMPE dalam melakukan estimasi PGA:")
 
-            from sklearn.metrics import mean_squared_error, mean_absolute_error
+            
             
             y_true = df_filtered['PGA_GMPE']
             y_pred = df_filtered['PGA_MLP']
@@ -692,19 +712,15 @@ def show():
             user_mae = mean_absolute_error(y_true, y_pred)
             avg_corr = (y_pred - y_true).abs().mean()
 
-            u_col1, u_col2, u_col3 = st.columns(3)
+            u_col1, u_col2 = st.columns(2)
             with u_col1:
                 st.metric("MAE (Rata-rata Error)", f"{user_mae:.5f} g")
                 st.caption("Semakin kecil MAE, semakin dekat MLP dengan GMPE.")
             with u_col2:
                 st.metric("RMSE (Deviasi Error)", f"{user_rmse:.5f} g")
                 st.caption("Mengukur penyebaran error prediksi.")
-            with u_col3:
-                st.metric("Avg. Correction", f"{avg_corr:.5f} g")
-                st.caption("Rata-rata penyesuaian oleh variabel tambahan.")
 
-            st.info("ℹ️ **Keterangan:** Nilai RMSE dan R² di atas menunjukkan tingkat keselarasan model MLP terhadap standar GMPE. "
-                    "Adanya selisih (Correction) menunjukkan peran variabel tambahan (NST, GAP, dll) dalam menyesuaikan nilai estimasi.")
+            st.info("ℹ️ **Keterangan:** Nilai RMSE dan MAE di atas menunjukkan tingkat kesalahan model MLP dan GMPE melakukan estimasi PGA.")
         
        
         # Visualisasi
@@ -768,20 +784,20 @@ def show():
             y_pred = df_result['PGA_MLP']
             u_rmse = np.sqrt(mean_squared_error(y_true, y_pred))
             u_mae = mean_absolute_error(y_true, y_pred)
-
+            
             col_acc1, col_acc2 = st.columns(2)
             with col_acc1:
-                fig_r2 = go.Figure(go.Indicator(
-                    mode = "gauge+number", value = u_mae,
-                    title = {'text': "MAE (Mean Absolute Error)"},
-                    gauge = {'axis': {'range': [0, 1]}, 'bar': {'color': "darkblue"}}))
-                st.plotly_chart(fig_r2, use_container_width=True)
+                st.metric("MAE (Mean Absolute Error)", f"{u_mae:.5f}")
+                # Progress bar sebagai indikator visual (misal max error 0.2)
+                progress_mae = min(u_mae / 0.2, 1.0) 
+                st.progress(progress_mae)
+                
             with col_acc2:
-                fig_rmse = go.Figure(go.Indicator(
-                    mode = "gauge+number", value = u_rmse,
-                    title = {'text': "RMSE (Root Mean Square Error)"},
-                    gauge = {'axis': {'range': [0, 0.2]}, 'bar': {'color': "darkred"}}))
-                st.plotly_chart(fig_rmse, use_container_width=True)
+                st.metric("RMSE (Root Mean Square Error)", f"{u_rmse:.5f}")
+                progress_rmse = min(u_rmse / 0.2, 1.0)
+                st.progress(progress_rmse)
+
+            st.caption("ℹ️ Semakin pendek bar, semakin kecil tingkat kesalahan model.")
 
             # Feature Importance
             st.markdown("#### Kontribusi Variabel terhadap Prediksi")
