@@ -19,7 +19,7 @@ def show():
     st.markdown("## 📋 Langkah-Langkah Penggunaan Aplikasi")
     
     # ========== STEP 1 ==========
-    with st.expander("**LANGKAH 1: Melihat Informasi Aplikasi di Halaman Beranda** 🏠", expanded=True):
+    with st.expander("**LANGKAH 1: Melihat Informasi Aplikasi di Halaman Beranda**", expanded=True):
         st.markdown("### Memahami Aplikasi QuakeAceh")
         
         st.markdown("""
@@ -53,7 +53,7 @@ def show():
         """)
     
     # ========== STEP 2 ==========
-    with st.expander("**LANGKAH 2: Input Data Gempa dan Validasi** 📊"):
+    with st.expander("**LANGKAH 2: Input Data Gempa dan Validasi**"):
         st.markdown("### Mengunggah Dataset Gempa")
         
         st.markdown("""
@@ -165,7 +165,7 @@ def show():
         """)
     
     # ========== STEP 3 ==========
-    with st.expander("**LANGKAH 3: Input Lokasi Target untuk Estimasi PGA** 📍"):
+    with st.expander("**LANGKAH 3: Input Lokasi Target untuk Estimasi PGA**"):
         st.markdown("### Menentukan Koordinat Lokasi Target")
         
         st.markdown("""
@@ -252,7 +252,7 @@ def show():
     
     
     # ========== STEP 4 ==========
-    with st.expander("**LANGKAH 4: Melihat Hasil dan Visualisasi** 📈"):
+    with st.expander("**LANGKAH 4: Melihat Hasil dan Visualisasi**"):
         st.markdown("### Memahami Output Estimasi PGA")
         
         st.markdown("""
