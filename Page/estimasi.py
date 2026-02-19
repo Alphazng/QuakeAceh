@@ -57,7 +57,7 @@ def show():
         
         **Formula:**
         
-        $$PGA = exp(F_M( + F_D+ F_S)
+        $$PGA = exp(F_M + F_D + F_S)$$
         
         Dengan:
         - **$F_M$ (Fungsi Magnitudo):** Menghitung pengaruh besarnya kekuatan gempa.
