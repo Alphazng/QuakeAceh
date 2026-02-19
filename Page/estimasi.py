@@ -57,7 +57,7 @@ def show():
         
         **Formula:**
         
-        $$ln(Y) = F_M(M) + F_D(M, R) + F_S(V_{S30}) + \epsilon$$
+        $$PGA = exp(F_M( + F_D+ F_S)
         
         Dengan:
         - **$F_M$ (Fungsi Magnitudo):** Menghitung pengaruh besarnya kekuatan gempa.
